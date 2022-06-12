@@ -1,0 +1,31 @@
+:root {
+  --logo-top: 0px;
+  --logo-left: 0px;
+  --logo-width: 800px;
+  --logo-height: 800px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+}
+canvas {
+  display: block;
+  position: absolute;
+  top: var(--logo-top);
+  left: var(--logo-left);
+  width: var(--logo-width);
+  height: var(--logo-height);
+}
+
+#logo-cutout
+{
+  position: absolute;
+  top: var(--logo-top);
+  left: var(--logo-left);
+  width: var(--logo-width);
+  height: var(--logo-height);
+  background-image: url('assets/img/u-logo.svg');
+  background-size: contain;
+}
