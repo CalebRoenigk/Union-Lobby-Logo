@@ -1,8 +1,10 @@
 :root {
-  --logo-top: 0px;
-  --logo-left: 0px;
+  --logo-top: 200px;
+  --logo-left: 535px;
   --logo-width: 800px;
   --logo-height: 800px;
+  --logo-scale-height: 1.1;
+  --logo-scale-width: 1.1;
 }
 
 html, body {
@@ -17,6 +19,8 @@ canvas {
   left: var(--logo-left);
   width: var(--logo-width);
   height: var(--logo-height);
+  transform-origin: top left;
+  transform: scale(var(--logo-scale-width), var(--logo-scale-height));
 }
 
 #logo-cutout
@@ -28,4 +32,6 @@ canvas {
   height: var(--logo-height);
   background-image: url('assets/img/u-logo.svg');
   background-size: contain;
+  transform-origin: top left;
+  transform: scale(var(--logo-scale-width), var(--logo-scale-height));
 }
