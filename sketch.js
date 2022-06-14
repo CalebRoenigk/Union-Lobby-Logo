@@ -1,26 +1,31 @@
 var mgr;
 
+function preload() {
+  // img = loadImage('assets/img/effect.gif');
+}
+
 function setup()
 {
-    createCanvas(800, 800);
-
     mgr = new SceneManager();
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
 
     // Preload scenes. Preloading is normally optional
     // ... but needed if showNextScene() is used.
-    mgr.addScene ( Logo_Strings );
-    mgr.addScene ( Logo_Quilt );
-    mgr.addScene ( Logo_Rope );
+    mgr.addScene ( Logo_Strings ); // Need to add Dynamic Colors
+    mgr.addScene ( Logo_Quilt ); // Need to add Dynamic Colors, Random Seed
+    mgr.addScene ( Logo_Rope ); // Need to add Dynamic Colors
     mgr.addScene ( Logo_Block );
-    mgr.addScene ( Logo_Link );
-    mgr.addScene ( Logo_Radiant );
-    mgr.addScene ( Logo_Scales );
-    mgr.addScene ( Logo_Trains );
+    // mgr.addScene ( Logo_Link ); // Disabled until rendering time bug can be fixed Need to add Dynamic Colors
+    mgr.addScene ( Logo_Radiant );  // Need to add Dynamic Colors
+    mgr.addScene ( Logo_Scales );  // Need to add Dynamic Colors
+    mgr.addScene ( Logo_Trains );  // Need to add Dynamic Colors
     mgr.addScene ( Logo_Holographic );
-    mgr.addScene ( Logo_Swirl );
-    mgr.addScene ( Logo_LCD );
-    mgr.addScene ( Logo_Topography );
-    mgr.addScene ( Logo_Particles );
+    mgr.addScene ( Logo_Swirl );  // Need to add Dynamic Colors
+    mgr.addScene ( Logo_LCD ); // Need to add Dynamic Colors
+    mgr.addScene ( Logo_Topography ); // Need to add Dynamic Colors
+    mgr.addScene ( Logo_Particles ); // Need to add Dynamic Colors
+    // mgr.addScene ( Logo_Cracks ); // Disabled until dependancy bug can be fixed Need to add Dynamic Colors
+    // mgr.addScene ( Logo_Collapse ); // Disabled until rendering bug can be fixed Need to add Dynamic Colors
 
     mgr.showNextScene();
 }
@@ -338,7 +343,7 @@ function Logo_Block()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
   }
 
   this.draw = function()
@@ -488,7 +493,7 @@ function Logo_Rope()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
     
     randomSeed(day() * month() * hour() * minute() * second());
     
@@ -631,7 +636,7 @@ function Logo_Quilt()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
     colorMode(HSB, 255);
   }
 
@@ -733,7 +738,7 @@ function Logo_Strings()
     }
   }
 
-class LineString
+  class LineString
   {
     constructor(stringRenderer, anchor1, control1, anchor2, control2, anchor1SineProperties, control1SineProperties, anchor2SineProperties, control2SineProperties, stringColor, stringIndex)
     {
@@ -835,7 +840,7 @@ class LineString
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
     randomSeed(day() * month() * hour() * minute() * second());
     
     frameRate(30);
@@ -974,7 +979,7 @@ function Logo_Radiant()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
     randomSeed(day() * month() * hour() * minute() * second());
   }
 
@@ -1047,7 +1052,7 @@ function Logo_Scales()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
     angleMode(DEGREES);
   }
 
@@ -1360,7 +1365,7 @@ class Train
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
   }
 
   this.draw = function() 
@@ -1999,7 +2004,7 @@ function Logo_Link()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
   }
 
   this.draw = function()
@@ -2169,7 +2174,7 @@ function Logo_Holographic()
   this.setup = function()
   {
     pixelDensity(1);
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
   }
 
   this.draw = function()
@@ -2274,7 +2279,7 @@ function Logo_Swirl()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
   }
 
   this.draw = function()
@@ -2460,7 +2465,7 @@ function Logo_LCD()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
   }
 
   this.draw = function()
@@ -2511,6 +2516,7 @@ function Logo_Topography()
     {
       this.time = time;
       let pointArray = [];
+      drawingContext.setLineDash([0,0]);
       for(let y = 0; y < this.divisions; y++)
         {
           let widthChange = SineWave(0.071, 0.25, (y * y) * this.changeScale, 2, 12 * this.masterSpeed, this.time);
@@ -2579,7 +2585,7 @@ function Logo_Topography()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
   }
 
   this.draw = function()
@@ -2764,7 +2770,7 @@ function Logo_Particles()
 
   this.setup = function()
   {
-    createCanvas(800, 800);
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
     let emitterA = new ParticleEmitter(color('#e66cfb'), createVector(12,46), 8, 0.3, 160, 3.125, true, 0.5, createVector(22,18), 0.18, createVector(0, -21), createVector(width/2, height*1.25), createVector(width*1.25, 50));
     let emitterB = new ParticleEmitter(color('#fc0f01'), createVector(4,11), 1, 0.5, 12, 6, true, 0.8, createVector(13,6), 0.18, createVector(0, -12), createVector(width/2, height*1.25), createVector(width*1.25, 50));
     let emitterC = new ParticleEmitter(color('#2724d8'), createVector(22,42), 3, 0.4, 32, 3, true, 0.875, createVector(11,6), 0.18, createVector(0, -38), createVector(width/2, height*1.25), createVector(width*1.25, 50));
@@ -2797,5 +2803,219 @@ function Logo_Particles()
           }
         this.particleEmitters[e].renderParticles(this.time);
       }
+  }
+}
+
+// Cracks Scene
+function Logo_Cracks()
+{
+  this.voronoi; //object voronoi
+  this.bbox ; //The box that contains the cells
+
+  // A site is a coord (x,y) for compute a cell 
+  this.sites ; //[ {x: 200, y: 200}, {x: 50, y: 250}, {x: 400, y: 100} /* , ... */ ];
+
+  // Variables for voronoi computing
+  this.diagram; 
+  this.edgs;
+  this.cells;
+
+  //Variables for numer of cells in a grid. For random cells, just fill the number of cols.
+  this.cols = 12;
+  this.rows = 16;
+  this.lines=7;
+
+  this.time = 0;
+  this.vorSpeed = 0.05;
+
+  this.setup = function()
+  {
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+    
+    this.voronoi = new Voronoi(); //Declare Voronoi object
+    
+    this.bbox = {xl: 0, xr: width, yt: 0, yb: height}; // xl is x-left, xr is x-right, yt is y-top, and yb is y-bottom
+    
+    //Create an empty array for the coord of all sites
+    this.sites = []; //[ {x: 200, y: 200}, {x: 50, y: 250}, {x: 400, y: 100} /* , ... */ ];
+      
+    // Phased Voronoi
+      let siteArray = [];
+      for (let x = 0; x < cols; x++)
+        {
+          let siteRow = [];
+          for (let y = 0; y < rows; y++)
+            {
+              let sX = SineWave(width/2, (x + y) / 12, x, width/2, this.vorSpeed, this.time);
+              let sY = SineWave(height/2, (x + y) / 12, y, height/2, this.vorSpeed, this.time);
+              siteRow.push({x: sX,y: sY});
+            }
+          siteArray.push(siteRow);
+        }
+        this.sites = siteArray.flat();
+    
+    //Object that contains the data for computing
+    this.diagram = this.voronoi.compute(this.sites, this.bbox);
+  }
+
+  this.draw = function()
+  {
+    background(0);
+    
+    this.time += deltaTime / 1000;
+      
+    // you can use a stroke color
+    noStroke();
+    
+    //we need to create 2 array for ref to each cells and edges
+    this.edgs = this.diagram.edges;
+    this.cells = this.diagram.cells;
+
+    //Position of the moving cell in voronoi
+    let siteArray = [];
+      for (let x = 0; x < cols; x++)
+        {
+          let siteRow = [];
+          for (let y = 0; y < rows; y++)
+            {
+              let sX = SineWave(width/2, (x + y) / 12, x, width/2, this.vorSpeed, this.time);
+              let sY = SineWave(height/2, (x + y) / 12, y, height/2, this.vorSpeed, this.time);
+              siteRow.push({x: sX,y: sY});
+            }
+          siteArray.push(siteRow);
+        }
+        this.sites = siteArray.flat();
+
+    //execute the voronoi each frame
+    this.diagram = this.voronoi.compute(this.sites,this.bbox);
+      
+    //render the voronoi
+    //for each cell in the array of cells
+    for (let i = 0; i < this.cells.length;i++){
+      //var cell is a ref to the cell 
+      let cell = this.cells[i]; 
+      //We need to know how many vertices for each cell
+      let lon = cell.halfedges.length; 
+      //for colors
+      fill(color('white'));
+      stroke(color('black'));
+      strokeWeight(map(getSiteSize(this.cells[i], lon), 0, 8000, 1, 12));
+      strokeJoin(ROUND);
+      
+      //let draw a cell
+      beginShape();
+      for (let j = 0; j < lon;j++){
+        //we draw each vertice from the starting point
+        vertex(this.cells[i].halfedges[j].getStartpoint().x, this.cells[i].halfedges[j].getStartpoint().y);
+      }
+      //With CLOSE we don't need the end Point
+      endShape(CLOSE);
+    }
+  }
+
+  function getSiteSize(cell, lon)
+  {
+    let points = [];
+    for (let j = 0; j < lon;j++){
+        //we draw each vertice from the starting point
+        points.push(createVector(cell.halfedges[j].getStartpoint().x, cell.halfedges[j].getStartpoint().y));
+      }
+    
+    return calcPolygonArea(points);
+  }
+
+  function calcPolygonArea(vertices) {
+      var total = 0;
+
+      for (var i = 0, l = vertices.length; i < l; i++) {
+        var addX = vertices[i].x;
+        var addY = vertices[i == vertices.length - 1 ? 0 : i + 1].y;
+        var subX = vertices[i == vertices.length - 1 ? 0 : i + 1].x;
+        var subY = vertices[i].y;
+
+        total += (addX * addY * 0.5);
+        total -= (subX * subY * 0.5);
+      }
+
+      return Math.abs(total);
+  }
+}
+
+// Collapse Scene
+function Logo_Collapse()
+{
+  class TileRenderer
+    {
+      constructor(canvasGraphic)
+      {
+        this.time = 0;
+
+        this.canvas = canvasGraphic;
+        
+        this.rows = 28;
+        this.columns = 14;
+        
+        this.tileSpeed = 12;
+        
+        this.graphic = createGraphics(width, height);
+      }
+      
+      renderCollapse()
+      {
+        // Update the tile graphic
+        this.renderTiles();
+        
+        // Create the planes
+        this.canvas.texture(this.graphic);
+        this.canvas.rotateX(45);
+        this.canvas.noStroke();
+        this.canvas.plane(width*2);
+        
+        this.canvas.rotateX(90);
+        this.canvas.plane(width*2);
+      }
+      
+      renderTiles()
+      {
+        this.time += deltaTime / 1000;
+        
+        let tileSize = createVector(this.graphic.width/this.columns, this.graphic.height/this.rows);
+        for(let x = 0; x < this.columns; x++)
+          {
+            for(let y = 0; y < this.rows * 2; y++)
+              {
+                let start = createVector(tileSize.x * x, tileSize.y * y);
+                let yOffset = (this.time * this.tileSpeed) % this.graphic.height;
+                start.add(createVector(0, -yOffset));
+                
+                this.graphic.noStroke();
+                this.graphic.fill(color('black'));
+                if((x + y) % 2 == 0)
+                  {
+                    this.graphic.fill(color('white'));
+                  }
+                
+                this.graphic.rect(start.x, start.y, tileSize.x, tileSize.y);
+              }
+          }
+      }
+    }
+  
+  this.canvasGraphic = createGraphics(mgr.canvasSize.x, mgr.canvasSize.y, WEBGL);
+  this.tileRenderer = new TileRenderer(this.canvasGraphic);
+  
+
+  function setup() {
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+    this.canvasGraphic.angleMode(DEGREES);
+    this.canvasGraphic.perspective(125, 1, 0.1, width/2)
+    this.canvasGraphic.camera(0,0, 250, 0, 0, 0);
+  }
+
+  this.draw = function()
+  {
+    this.canvasGraphic.background(220);
+    this.tileRenderer.renderCollapse();
+    image(this.tileRenderer.canvas, 0,0);
   }
 }
