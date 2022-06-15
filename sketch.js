@@ -3386,10 +3386,13 @@ function Logo_Clock()
         this.renderDebug = true;
         
         // Guides
-        this.margin = 75;
-        this.colWidth = 250;
-        this.col1 = createVector(this.margin, this.margin + this.colWidth);
-        this.col2 = createVector((width - this.margin) - this.colWidth, width - this.margin);
+        this.marginTop = 55;
+        this.marginLeft = 70;
+        this.marginRight = 65;
+        this.marginBottom = 50;
+        this.colWidth = 240;
+        this.col1 = createVector(this.marginLeft, this.marginLeft + this.colWidth);
+        this.col2 = createVector((width - this.marginRight) - this.colWidth, width - this.marginRight);
         
         // Text
         this.textDisplay = 
@@ -3429,8 +3432,8 @@ function Logo_Clock()
         line(this.col1.y, 0, this.col1.y, height);
         line(this.col2.x, 0, this.col2.x, height);
         line(this.col2.y, 0, this.col2.y, height);
-        line(0, this.margin, width, this.margin);
-        line(0, height - this.margin, width, height - this.margin);
+        line(0, this.marginTop, width, this.marginTop);
+        line(0, height - this.marginBottom, width, height - this.marginBottom);
       }
       
       getTimeAsText()
