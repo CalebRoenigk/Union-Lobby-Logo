@@ -3387,10 +3387,10 @@ function Logo_Clock()
         
         // Guides
         this.marginTop = 55;
-        this.marginLeft = 70;
-        this.marginRight = 65;
+        this.marginLeft = 72;
+        this.marginRight = 68;
         this.marginBottom = 50;
-        this.colWidth = 240;
+        this.colWidth = 237;
         this.col1 = createVector(this.marginLeft, this.marginLeft + this.colWidth);
         this.col2 = createVector((width - this.marginRight) - this.colWidth, width - this.marginRight);
         
@@ -3409,7 +3409,7 @@ function Logo_Clock()
         this.textActiveColor = color('white');
         this.textInactiveColor = color('rgba(255,255,255,0.25)');
         this.textSize = 50;
-        this.textRowHeight = min((height - (this.margin * 2)) / this.textDisplay.length, this.textSize*1.5);
+        this.textRowHeight = min((height - (this.marginTop + this.marginBottom)) / this.textDisplay.length, this.textSize*1.5);
       }
       
       renderClock()
