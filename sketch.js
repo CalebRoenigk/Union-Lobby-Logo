@@ -187,7 +187,7 @@ class Mask {
     this.size = size;
     this.position = position;
     this.cutout = cutout;
-    this.maskColor = color("black");
+    this.maskColor = color("red");
 
     this.pointDraggingIndex = -1;
   }
