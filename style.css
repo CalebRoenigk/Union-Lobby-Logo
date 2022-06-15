@@ -32,6 +32,6 @@ canvas {
   height: var(--logo-height);
   transform-origin: top left;
   transform: scale(var(--logo-scale-width), var(--logo-scale-height));
-  background-image: url('assets/img/u-logo.svg');
-  background-size: contain;
+/*   background-image: url('assets/img/u-logo.svg');
+  background-size: contain; */
 }
