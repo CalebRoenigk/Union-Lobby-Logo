@@ -1,4 +1,5 @@
 var mgr;
+let maskEditor;
 
 function preload() {
   // img = loadImage('assets/img/effect.gif');
@@ -26,13 +27,21 @@ function setup()
     mgr.addScene ( Logo_Particles ); // Need to add Dynamic Colors
     // mgr.addScene ( Logo_Cracks ); // Disabled until dependancy bug can be fixed Need to add Dynamic Colors
     // mgr.addScene ( Logo_Collapse ); // Disabled until rendering bug can be fixed Need to add Dynamic Colors
+    mgr.addScene ( Logo_Clock ); // Need to add Dynamic Colors
 
     mgr.showNextScene();
+    maskEditor = new MaskEditor();
 }
 
 function draw()
 {
     mgr.draw();
+    maskEditor.drawMask();
+
+    if(keyIsPressed === true && maskEditor.configureMode == true)
+    {
+      maskEditor.printMaskPoints();
+    }
 }
 
 function mousePressed()
@@ -81,6 +90,353 @@ function keyPressed()
     mgr.handleEvent("keyPressed");
 }
 
+// =============================================================
+// =                         BEGIN MASK EDITOR                 = 
+// =============================================================
+
+class MaskEditor
+    {
+      constructor()
+      {
+        this.configureMode = true;
+        
+        this.mask = [];
+        
+        this.generateMaskPoints();
+      }
+      
+      generateMaskPoints()
+      {
+        this.mask.push(new MaskShape([
+          new MaskPoint(createVector(100,100), 'vertex'),
+          new MaskPoint(createVector(200,100), 'vertex'),
+          new MaskPoint(createVector(200,600), 'vertex'),
+          new MaskPoint(createVector(100,600), 'quadratic', createVector(200,600)),
+          new MaskPoint(createVector(100,600), 'quadratic', createVector(100,500))
+        ]));
+        this.mask.push(new MaskShape([
+          new MaskPoint(createVector(400,100), 'vertex'),
+          new MaskPoint(createVector(500,100), 'vertex'),
+          new MaskPoint(createVector(500,600), 'vertex'),
+          new MaskPoint(createVector(400,600), 'vertex')
+        ]));
+        
+        
+      }
+      
+      printMaskPoints()
+      {
+        let masks = [];
+        for(let s = 0; s < this.mask.length; s++)
+          {
+            let pointArray = [];
+            for(let p = 0; p < this.mask[s].points.length; p++)
+              {
+                let pointObject = {position: this.mask[s].points[p].position.toString(), control: this.mask[s].points[p].control.toString(), type: this.mask[s].points[p].type};
+                pointArray.push(pointObject);
+              }
+            let maskObject = {points: pointArray};
+            masks.push(maskObject);
+          }
+        
+        print(JSON.stringify(masks));
+      }
+      
+      drawMask()
+      {
+        if(this.configureMode)
+          {
+            this.checkInteraction();
+            
+            for(let s = 0; s < this.mask.length; s++)
+              {
+                noStroke();
+                fill(color('rgba(255,0,0,0.75)'));
+
+                beginShape();
+                for(let p = 0; p < this.mask[s].points.length; p++)
+                  {              
+                    switch(this.mask[s].points[p].type)
+                      {
+                        case 'vertex':
+                        default:
+                          vertex(this.mask[s].points[p].position.x, this.mask[s].points[p].position.y);
+                          break;
+                        case 'quadratic':
+                          quadraticVertex(this.mask[s].points[p].position.x, this.mask[s].points[p].position.y, this.mask[s].points[p].control.x, this.mask[s].points[p].control.y);
+                          break;
+                      }
+                  }
+
+                endShape();
+              }
+            
+            beginShape();
+            endShape();
+            
+            this.drawHandles();
+          }
+        else
+          {
+//             for(let s = 0; s < this.mask.length; s++)
+//               {
+//                 noStroke();
+//                 fill(color('red'));
+
+//                 beginShape();
+//                 vertex(0,0);
+//                 vertex(width,0);
+//                 vertex(width,height);
+//                 vertex(0,height);
+//                 for(let p = 0; p < this.mask[s].points.length; p++)
+//                   {              
+//                     beginContour();
+//                     switch(this.mask[s].points[p].type)
+//                       {
+//                         case 'vertex':
+//                         default:
+//                           vertex(this.mask[s].points[p].position.x, this.mask[s].points[p].position.y);
+//                           break;
+//                         case 'quadratic':
+//                           quadraticVertex(this.mask[s].points[p].position.x, this.mask[s].points[p].position.y, this.mask[s].points[p].control.x, this.mask[s].points[p].control.y);
+//                           break;
+//                       }
+//                     endContour(CLOSE);
+//                   }
+
+//                 endShape(CLOSE);
+//               }
+          }
+      }
+      
+      drawHandles()
+      {
+        for(let s = 0; s < this.mask.length; s++)
+          {
+            for(let p = 0; p < this.mask[s].points.length; p++)
+              {
+                this.mask[s].points[p].renderPoint();
+              }
+          }
+      }
+      
+      checkInteraction()
+      {
+        let mousePosition = createVector(mouseX, mouseY);
+        
+        // Iterate over all interaction points
+        for(let s = 0; s < this.mask.length; s++)
+          {
+            this.mask[s].checkInteraction(mousePosition);
+          }
+      }
+    }
+
+  class MaskPoint
+    {
+      constructor(position, type, control)
+      {
+        this.position = position;
+        this.control = control;
+        if(control === undefined)
+          {
+            this.control = this.position;
+          }
+        this.type = type;
+        this.isDragging = false;
+        this.isDraggingControl = false;
+        this.mask = null;
+      }
+      
+      renderPoint()
+      {
+        let isHoveringControl = this.isMouseOnControlPoint(createVector(mouseX, mouseY));
+        let isHoveringPoint = this.isMouseOnPoint(createVector(mouseX, mouseY));
+        
+        if(this.type == 'vertex')
+          {
+            noFill();
+            stroke(color('cyan'));
+            if(isHoveringPoint)
+              {
+                stroke(color('magenta'));
+              }
+            strokeWeight(8);
+            
+            point(this.position.x, this.position.y);
+          }
+        else
+          {
+            noFill();
+            stroke(color('yellow'));
+            if(isHoveringPoint || isHoveringControl)
+              {
+                stroke(color('orange'));
+              }
+            strokeWeight(1);
+            
+            line(this.position.x, this.position.y, this.control.x, this.control.y);
+            
+            noFill();
+            stroke(color('cyan'));
+            if(isHoveringPoint)
+              {
+                stroke(color('magenta'));
+              }
+            strokeWeight(8);
+            
+            point(this.position.x, this.position.y);
+            
+            noFill();
+            stroke(color('cyan'));
+            if(isHoveringControl)
+              {
+                stroke(color('magenta'));
+              }
+            strokeWeight(8);
+            
+            point(this.control.x, this.control.y);
+          }
+      }
+      
+      checkInteraction(mousePosition, pointsDragging)
+      {
+        if(this.isDragging)
+          {
+            // The mouse is dragging this point
+            // Move the point to where the mouse is
+            this.updatePosition(mousePosition);
+            if(!mouseIsPressed)
+              {
+                // The mouse has let go of the point
+                // Drop the point where the mouse is
+                this.isDragging = false;
+              }
+          }
+        
+        if(!this.isDragging && mouseIsPressed && this.isMouseOnPoint(mousePosition))
+          {
+            // The mouse is over the point
+            // Check if the mouse is already dragging another point
+            if(!pointsDragging)
+              {
+                // The mouse has picked up the point
+                this.updatePosition(mousePosition);
+                this.isDragging = true;
+              }
+          }
+        
+        this.checkControlInteraction(mousePosition, pointsDragging)
+      }
+      
+      checkControlInteraction(mousePosition, pointsDragging)
+      {
+        if(this.isDraggingControl)
+          {
+            // The mouse is dragging this point
+            // Move the point to where the mouse is
+            this.updateControlPosition(mousePosition);
+            if(!mouseIsPressed)
+              {
+                // The mouse has let go of the point
+                // Drop the point where the mouse is
+                this.isDraggingControl = false;
+              }
+          }
+        
+        if(!this.isDraggingControl && mouseIsPressed && this.isMouseOnControlPoint(mousePosition))
+          {
+            // The mouse is over the point
+            // Check if the mouse is already dragging another point
+            if(!pointsDragging)
+              {
+                // The mouse has picked up the point
+                this.updateControlPosition(mousePosition);
+                this.isDraggingControl = true;
+              }
+          }
+      }
+      
+      // Updates the position
+      updatePosition(position)
+      {
+        this.position = position;
+      }
+      
+      // Updates the position
+      updateControlPosition(position)
+      {
+        this.control = position;
+      }
+      
+      // Is the mouse on the point
+      isMouseOnPoint(mousePosition)
+      {
+        if(dist(this.position.x, this.position.y, mousePosition.x, mousePosition.y) <= 8)
+          {
+            return true;
+          }
+        else
+          {
+            return false;
+          }
+      }
+      
+      // Is the mouse on the point
+      isMouseOnControlPoint(mousePosition)
+      {
+        if(dist(this.control.x, this.control.y, mousePosition.x, mousePosition.y) <= 8)
+          {
+            return true;
+          }
+        else
+          {
+            return false;
+          }
+      }
+    }
+
+  class MaskShape
+    {
+      constructor(points)
+      {
+        this.points = points;
+        
+        this.linkMaskShape();
+      }
+      
+      linkMaskShape()
+      {
+        for(let p = 0; p < this.points.length; p++)
+          {
+            this.points[p].mask = this;
+          }
+      }
+      
+      checkInteraction(mousePosition)
+      {
+        for(let p = 0; p < this.points.length; p++)
+          {
+            this.points[p].checkInteraction(mousePosition, this.anyPointsDragging());
+          }
+      }
+      
+      anyPointsDragging()
+      {
+        let pointIsDragging = false;
+        // Iterate over all points
+        for(let p = 0; p < this.points.length; p++)
+          {
+            if(this.points[p].isDragging || this.points[p].isControlDragging)
+              {
+                return true;
+              }
+            
+          }
+        
+        return false;
+      }
+    }
 
 // =============================================================
 // =                         BEGIN SCENES                      = 
@@ -3017,5 +3373,321 @@ function Logo_Collapse()
     this.canvasGraphic.background(220);
     this.tileRenderer.renderCollapse();
     image(this.tileRenderer.canvas, 0,0);
+  }
+}
+
+// Clock Scene
+function Logo_Clock()
+{
+  class ClockRenderer
+    {
+      constructor()
+      {
+        this.renderDebug = true;
+        
+        // Guides
+        this.margin = 75;
+        this.colWidth = 250;
+        this.col1 = createVector(this.margin, this.margin + this.colWidth);
+        this.col2 = createVector((width - this.margin) - this.colWidth, width - this.margin);
+        
+        // Text
+        this.textDisplay = 
+        [
+          [new TimeText('It is', 1, true), new TimeText('a', 1, false), new TimeText('ten', 2, true), new TimeText('quarter', 2, false)],
+          [new TimeText('twenty', 1, true), new TimeText('five', 1, false), new TimeText('half', 2, true), new TimeText('past', 2, false)],
+          [new TimeText('to', 1, true), new TimeText('one', 1, false), new TimeText('two', 2, true), new TimeText('three', 2, false)],
+          [new TimeText('four', 1, true), new TimeText('five', 1, false), new TimeText('six', 2, true), new TimeText('seven', 2, false)],
+          [new TimeText('eight', 1, true), new TimeText('nine', 1, false), new TimeText('ten', 2, true), new TimeText('eleven', 2, false)],
+          [new TimeText('tweleve', 1, true), new TimeText("o'clock", 2, true)]
+        ];
+        
+        // Display
+        this.textActiveColor = color('white');
+        this.textInactiveColor = color('rgba(255,255,255,0.25)');
+        this.textSize = 50;
+        this.textRowHeight = min((height - (this.margin * 2)) / this.textDisplay.length, this.textSize*1.5);
+      }
+      
+      renderClock()
+      {
+        if(this.renderDebug)
+          {
+            this.renderGuides();
+          }
+        this.getTimeAsText();
+        this.renderTextDisplay();
+      }
+      
+      renderGuides()
+      {
+        noFill();
+        stroke(color('rgb(0,255,255)'));
+        strokeWeight(1);
+        
+        line(this.col1.x, 0, this.col1.x, height);
+        line(this.col1.y, 0, this.col1.y, height);
+        line(this.col2.x, 0, this.col2.x, height);
+        line(this.col2.y, 0, this.col2.y, height);
+        line(0, this.margin, width, this.margin);
+        line(0, height - this.margin, width, height - this.margin);
+      }
+      
+      getTimeAsText()
+      {
+        // Set all text to inactive
+        for(let x = 0; x < this.textDisplay.length; x++)
+          {
+            for(let y = 0; y < this.textDisplay[x].length; y++)
+              {
+                this.textDisplay[x][y].setActive(false);
+              }
+          }
+        
+        let prefix = this.getPrefixText();
+        
+        // Get minute text
+        let minuteText = this.getMinuteText();
+        
+        /// Get Preposition
+        let preposition = this.getPrepositionText();
+        
+        // Get Hour
+        let hourText = this.getHourText();
+        
+        return [prefix, minuteText, preposition, hourText].join(' ');
+      }
+      
+      getPrefixText()
+      {
+        let minuteValue = floor((minute() + 1) / 5);
+        switch(minuteValue)
+          {
+            case 0:
+            default:
+              return '';
+            case 1:
+            case 2:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 10:
+            case 11:
+              this.textDisplay[0][0].setActive(true);
+              return 'It is';
+            case 3:
+            case 9:
+              this.textDisplay[0][0].setActive(true);
+              this.textDisplay[0][1].setActive(true);
+              return 'It is a';
+          }
+      }
+      
+      getHourText()
+      {
+        let hourValue = this.wrapHour(hour());
+        if((minute() + 1) > 30)
+          {
+            hourValue = this.wrapHour(hour() + 1);
+          }
+        
+        let hourText = 'zero';
+        switch(hourValue)
+          {
+            case 1:
+              this.textDisplay[2][1].setActive(true);
+              hourText = 'one';
+              break;
+            case 2:
+              this.textDisplay[2][2].setActive(true);
+              hourText = 'two';
+              break;
+            case 3:
+              this.textDisplay[2][3].setActive(true);
+              hourText = 'three';
+              break;
+            case 4:
+              this.textDisplay[3][0].setActive(true);
+              hourText = 'four';
+              break;
+            case 5:
+              this.textDisplay[3][1].setActive(true);
+              hourText = 'five';
+              break;
+            case 6:
+              this.textDisplay[3][2].setActive(true);
+              hourText = 'six';
+              break;
+            case 7:
+              this.textDisplay[3][3].setActive(true);
+              hourText = 'seven';
+              break;
+            case 8:
+              this.textDisplay[4][0].setActive(true);
+              hourText = 'eight';
+              break;
+            case 9:
+              this.textDisplay[4][1].setActive(true);
+              hourText = 'nine';
+              break;
+            case 10:
+              this.textDisplay[4][2].setActive(true);
+              hourText = 'ten';
+              break;
+            case 11:
+              this.textDisplay[4][3].setActive(true);
+              hourText = 'eleven';
+              break;
+            case 12:
+              this.textDisplay[5][0].setActive(true);
+              hourText = 'tweleve';
+              break;
+          }
+        
+        let suffix = '';
+        if(minute() == 0)
+          {
+            this.textDisplay[5][1].setActive(true);
+            suffix = " o'clock";
+          }
+        
+        return (hourText + suffix);
+      }
+      
+      wrapHour(hour)
+      {
+        return hour % 12;
+      }
+      
+      getMinuteText()
+      {
+        let minuteValue = floor((minute() + 1) / 5);
+        switch(minuteValue)
+          {
+            case 0:
+            default:
+              return '';
+            case 1:
+            case 11:
+              this.textDisplay[1][1].setActive(true);
+              return 'five';
+            case 2:
+            case 10:
+              this.textDisplay[0][2].setActive(true);
+              return 'ten';
+            case 3:
+            case 9:
+              this.textDisplay[0][1].setActive(true);
+              this.textDisplay[0][3].setActive(true);
+              return 'a quarter';
+            case 4:
+            case 8:
+              this.textDisplay[1][0].setActive(true);
+              return 'twenty';
+            case 5:
+            case 7:
+              this.textDisplay[1][0].setActive(true);
+              this.textDisplay[1][1].setActive(true);
+              return 'twenty five';
+            case 6:
+              this.textDisplay[1][2].setActive(true);
+              return 'half';
+          }
+      }
+      
+      getPrepositionText()
+      {
+        let minuteValue = floor((minute() + 1) / 5);
+        switch(minuteValue)
+          {
+            case 0:
+            default:
+              return '';
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+              this.textDisplay[1][3].setActive(true);
+              return 'past';
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+              this.textDisplay[2][0].setActive(true);
+              return 'to';
+          }
+      }
+      
+      renderTextDisplay()
+      {
+        for(let y = 0; y < this.textDisplay.length; y++)
+          {
+            for(let i = 0; i < this.textDisplay[y].length; i++)
+              {
+                // Render the text
+                noStroke();
+                fill(this.textInactiveColor)
+                if(this.textDisplay[y][i].active)
+                  {
+                    fill(this.textActiveColor)
+                  }
+                textSize(this.textSize);
+                textFont('IBM Plex Sans');
+                textAlign(LEFT);
+                let renderCol = this.col1;
+                if(this.textDisplay[y][i].col == 2)
+                  {
+                    renderCol = this.col2;
+                  }
+                let xPosition = renderCol.x;
+                if(!this.textDisplay[y][i].start)
+                  {
+                    textAlign(RIGHT);
+                    xPosition = renderCol.y;
+                  }
+                let yPosition = (y * this.textRowHeight) + this.margin + this.textSize;
+                
+                text(this.textDisplay[y][i].text, xPosition, yPosition);
+              }
+          }
+      }
+    }
+
+  class TimeText
+    {
+      constructor(text, col, start)
+      {
+        this.text = text;
+        this.col = col;
+        this.start = start;
+        if(start === undefined)
+          {
+            this.start = false;
+          }
+        this.active = true;
+      }
+      
+      setActive(active)
+      {
+        this.active = active;
+      }
+    }
+  
+  this.clockRenderer = new ClockRenderer();
+
+  this.setup = function()
+  {
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+  }
+
+  this.draw = function()
+  {
+    background(0);
+    this.clockRenderer.renderClock();
   }
 }
