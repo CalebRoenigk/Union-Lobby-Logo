@@ -3383,7 +3383,7 @@ function Logo_Clock()
     {
       constructor()
       {
-        this.renderDebug = true;
+        this.renderDebug = false;
         
         // Guides
         this.marginTop = 55;
