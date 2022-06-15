@@ -3653,7 +3653,7 @@ function Logo_Clock()
                     textAlign(RIGHT);
                     xPosition = renderCol.y;
                   }
-                let yPosition = (y * this.textRowHeight) + this.margin + this.textSize;
+                let yPosition = (y * this.textRowHeight) + this.marginTop + this.textSize;
                 
                 text(this.textDisplay[y][i].text, xPosition, yPosition);
               }
