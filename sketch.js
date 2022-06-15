@@ -12,6 +12,7 @@ function setup()
 
     // Preload scenes. Preloading is normally optional
     // ... but needed if showNextScene() is used.
+    mgr.addScene ( Logo_Clock ); // Need to add Dynamic Colors
     mgr.addScene ( Logo_Strings ); // Need to add Dynamic Colors
     mgr.addScene ( Logo_Quilt ); // Need to add Dynamic Colors, Random Seed
     mgr.addScene ( Logo_Rope ); // Need to add Dynamic Colors
@@ -27,7 +28,6 @@ function setup()
     mgr.addScene ( Logo_Particles ); // Need to add Dynamic Colors
     // mgr.addScene ( Logo_Cracks ); // Disabled until dependancy bug can be fixed Need to add Dynamic Colors
     // mgr.addScene ( Logo_Collapse ); // Disabled until rendering bug can be fixed Need to add Dynamic Colors
-    mgr.addScene ( Logo_Clock ); // Need to add Dynamic Colors
 
     mgr.showNextScene();
     maskEditor = new MaskEditor();
@@ -36,12 +36,12 @@ function setup()
 function draw()
 {
     mgr.draw();
-    maskEditor.drawMask();
+    // maskEditor.drawMask();
 
-    if(keyIsPressed === true && maskEditor.configureMode == true)
-    {
-      maskEditor.printMaskPoints();
-    }
+    // if(keyIsPressed === true && maskEditor.configureMode == true)
+    // {
+    //   maskEditor.printMaskPoints();
+    // }
 }
 
 function mousePressed()
