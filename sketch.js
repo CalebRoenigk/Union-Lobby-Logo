@@ -39,6 +39,9 @@ function draw() {
   if (keyIsDown(LEFT_ARROW) && maskEditor.configureMode == true) {
     maskEditor.printMaskPoints();
   }
+  if (keyIsDown(RIGHT_ARROW)) {
+    maskEditor.configureMode = !maskEditor.configureMode;
+  }
 }
 
 function mousePressed() {
@@ -187,7 +190,7 @@ class Mask {
     this.size = size;
     this.position = position;
     this.cutout = cutout;
-    this.maskColor = color("red");
+    this.maskColor = color("black");
 
     this.pointDraggingIndex = -1;
   }
@@ -211,6 +214,10 @@ class Mask {
     // Fill the mask with the mask color
     noStroke();
     fill(this.maskColor);
+    if(this.editor.configureMode)
+      {
+        fill(color('red'));
+      }
 
     // Create the base mask shape
     beginShape();
