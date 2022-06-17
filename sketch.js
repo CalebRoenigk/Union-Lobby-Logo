@@ -31,7 +31,7 @@ function setup() {
   // mgr.addScene ( Logo_Collapse ); // Disabled until rendering bug can be fixed Need to add Dynamic Colors
   mgr.addScene(Logo_Type); // Need to add Dynamic Colors
   mgr.addScene(Logo_Zigxel); // Need to add Dynamic Colors
-  mgr.addScene(Logo_Diagram); // Need to add Dynamic Colors
+  // mgr.addScene(Logo_Diagram); // Disabled until tangent lines bug can be fixed Need to add Dynamic Colors
 
   mgr.showNextScene();
   maskEditor = new MaskEditor();
