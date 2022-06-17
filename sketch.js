@@ -1,8 +1,10 @@
 var mgr;
 let maskEditor;
+let effectImg;
+// let patternElements = [];
 
 function preload() {
-  // img = loadImage('assets/img/effect.gif');
+  effectImg = loadImage('assets/img/animation.gif');
 }
 
 function setup() {
@@ -27,6 +29,9 @@ function setup() {
   mgr.addScene(Logo_Particles); // Need to add Dynamic Colors
   // mgr.addScene ( Logo_Cracks ); // Disabled until dependancy bug can be fixed Need to add Dynamic Colors
   // mgr.addScene ( Logo_Collapse ); // Disabled until rendering bug can be fixed Need to add Dynamic Colors
+  mgr.addScene(Logo_Type); // Need to add Dynamic Colors
+  mgr.addScene(Logo_Zigxel); // Need to add Dynamic Colors
+  mgr.addScene(Logo_Diagram); // Need to add Dynamic Colors
 
   mgr.showNextScene();
   maskEditor = new MaskEditor();
@@ -1507,7 +1512,7 @@ function Logo_Radiant() {
       this.points = [];
       this.pointSizePhases = [];
 
-      this.pointSize = 12;
+      this.pointSize = 14;
 
       this.viewportRenderMargin = this.pointSize * 2;
 
@@ -1618,7 +1623,7 @@ function Logo_Radiant() {
     }
   }
 
-  this.pointRenderer = new PointRenderer(5500, createVector(width, 0));
+  this.pointRenderer = new PointRenderer(3000, createVector(width, 0));
   this.time = 0;
 
   this.setup = function () {
@@ -1638,9 +1643,10 @@ function Logo_Scales() {
   class ScaleRenderer {
     constructor() {
       this.time = 0;
-      this.resolution = 32;
+      this.resolution = 20;
 
-      this.scaleSize = createVector(56, 36);
+      this.scaleSize = createVector(96, 56);
+      this.scaleStrokeWeight = 4;
 
       this.noiseSpeed = createVector(3, 2, 1);
       this.noiseSize = createVector(0.125, 0.125, 0.005);
@@ -1681,7 +1687,7 @@ function Logo_Scales() {
           let rotation = noiseSample * 360;
 
           let sine = SineWave(
-            12,
+            6,
             0.25 + noiseSample / 100,
             x * y + (x + y) + noiseSample,
             0,
@@ -1697,7 +1703,7 @@ function Logo_Scales() {
           rectMode(CENTER);
           line(0, 0, size.x, 0);
           stroke(color("white"));
-          strokeWeight(size.y - 3);
+          strokeWeight(size.y - this.scaleStrokeWeight);
           line(0, 0, size.x, 0);
           pop();
         }
@@ -4363,4 +4369,836 @@ function Logo_Clock() {
     background(0);
     this.clockRenderer.renderClock();
   };
+}
+
+// Type Scene
+function Logo_Type()
+{
+  class TypeRenderer
+    {
+      constructor(graphic)
+      {
+        this.graphic = graphic;
+        this.brightnessAdjust = -40;
+        this.contrastAdjust = 1.65;
+        
+        this.characters = ['N', 'O', 'U', 'I', 'n', 'o', 'u', 'i', ' '];
+      }
+      
+      renderType(frame)
+      {
+        // Get graphic brightness
+        let brightnessArray = this.getBrightness(frame);
+        // Covert the brightness to type
+        let typeArray = this.brightnessToType(brightnessArray);
+        
+        // Render the type array to the canvas
+        this.renderTypeArray(typeArray);
+      }
+      
+      getBrightness(frame)
+      {
+        let imageFrame = this.getGifFrame(frame);
+        // loadPixels();
+        imageFrame.loadPixels();
+        
+        let brightnessArray = [];
+        // Iterate over the graphic height
+        for(let y = 0; y < this.graphic.height; y++)
+          {
+            let brightnessRow = [];
+            // Iterate over the graphic width
+            for(let x = 0; x < this.graphic.width; x++)
+              {
+                let index = (x + y * this.graphic.width) * 4;
+                
+                let r = imageFrame.pixels[index + 0];
+                let g = imageFrame.pixels[index + 1];
+                let b = imageFrame.pixels[index + 2];
+                
+                let brightness = Clamp((this.averageBrightness([r,g,b]) + this.brightnessAdjust) * this.contrastAdjust, 0, 255);
+                
+                brightnessRow.push(brightness);
+              }
+            brightnessArray[y] = brightnessRow;
+          }
+        
+        return brightnessArray;
+      }
+      
+      averageBrightness(rgb)
+      {
+        return (rgb[0] + rgb[1] + rgb[2]) / 3;
+      }
+      
+      brightnessToType(brightnessArray)
+      {
+        let typeArray = [];
+        // Iterate over the graphic height
+        for(let y = 0; y < this.graphic.height; y++)
+          {
+            let typeRow = [];
+            // Iterate over the graphic width
+            for(let x = 0; x < this.graphic.width; x++)
+              {
+                let brightness = brightnessArray[x][y];
+                
+                let character = this.convertToType(brightness);
+                
+                typeRow.push(character);
+              }
+            typeArray[y] = typeRow;
+          }
+        
+        return typeArray;
+      }
+      
+      convertToType(brightness)
+      {
+        let index = ceil(map(floor(brightness), 255, 0, 0, this.characters.length - 1));
+        return this.characters[index];
+      }
+      
+      renderTypeArray(typeArray)
+      {
+        // Black out the background
+        background(0);
+        
+        // Get the size of the type based on the scale difference between the canvas and the graphic
+        let typeWidth = (width / this.graphic.width);
+        let typeHeight = (height / this.graphic.height);
+        
+        for(let x = 0; x < width / (width / this.graphic.width); x++)
+          {
+            for(let y = 0; y < height / (height / this.graphic.height); y++)
+              {
+                noStroke();
+                fill(color('white'));
+                textStyle(NORMAL);
+                textAlign(CENTER, CENTER);
+                textSize(min(typeWidth, typeHeight));
+                
+                text(typeArray[x][y], (x * typeWidth) + (typeWidth / 2), (y * typeHeight) + (typeHeight / 2));
+              }
+          }
+      }
+      
+      getGifFrame(frame)
+      {
+        let gifClone = this.graphic.get();
+        // access original gif properties
+        let gp = this.graphic.gifProperties;
+        // make a new object for the clone
+        gifClone.gifProperties = {
+          displayIndex: gp.displayIndex,
+          // we still point to the original array of frames
+          frames: gp.frames,
+          lastChangeTime: gp.lastChangeTime,
+          loopCount: gp.loopCount,
+          loopLimit: gp.loopLimit,
+          numFrames: gp.numFrames,
+          playing: gp.playing,
+          timeDisplayed: gp.timeDisplayed
+        };
+        // optional tweak the start frame
+        gifClone.setFrame(frame % gp.numFrames);
+
+        return gifClone;
+      }
+    }
+  
+  this.typeRenderer = new TypeRenderer(effectImg);
+  this.time = 0;
+
+  this.setup = function () {
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+    this.typeRenderer.renderType(floor(this.time));
+  };
+
+  this.draw = function() {
+    // background(0);
+    this.time += deltaTime / 90;
+    
+    this.typeRenderer.renderType(floor(this.time));
+  }
+}
+
+// Zigxel Scene
+function Logo_Zigxel()
+{
+  class ZigxelRenderer
+    {
+      constructor(graphic)
+      {
+        this.graphic = graphic;
+        
+        this.baseZigs = 4;
+        this.valueStops = 5;
+        this.sourceSampleRate = 2; // The number of pixels that are sampled during the read of brightness from the source image, 1 is all pixels, 2 is every other, etc
+        
+        this.brightnessAdjust = -30;
+        this.contrastAdjust = 1.35;
+
+        this.strokeSize = 1;
+      }
+      
+      renderZigxelImage(frame)
+      {
+        // Get graphic brightness
+        let brightnessArray = this.getBrightness(frame);
+        // Covert the brightness to values
+        let valueArray = this.brightnessToValue(brightnessArray);
+        
+        // Render the zigxels array to the canvas
+        this.renderZigxels(valueArray);
+      }
+      
+      getBrightness(frame)
+      {
+        let imageFrame = this.getGifFrame(frame);
+        // loadPixels();
+        imageFrame.loadPixels();
+        
+        let brightnessArray = [];
+        // Iterate over the graphic height
+        for(let y = 0; y < floor(this.graphic.height / this.sourceSampleRate); y++)
+          {
+            let brightnessRow = [];
+            // Iterate over the graphic width
+            for(let x = 0; x < floor(this.graphic.width / this.sourceSampleRate); x++)
+              {
+                let index = ((x * this.sourceSampleRate) + (y * this.sourceSampleRate) * this.graphic.width) * 4;
+                
+                let r = imageFrame.pixels[index + 0];
+                let g = imageFrame.pixels[index + 1];
+                let b = imageFrame.pixels[index + 2];
+                
+                let brightness = Clamp((this.averageBrightness([r,g,b]) + this.brightnessAdjust) * this.contrastAdjust, 0, 255);
+                
+                brightnessRow.push(brightness);
+              }
+            brightnessArray[y] = brightnessRow;
+          }
+        
+        return brightnessArray;
+      }
+      
+      averageBrightness(rgb)
+      {
+        return (rgb[0] + rgb[1] + rgb[2]) / 3;
+      }
+      
+      brightnessToValue(brightnessArray)
+      {
+        let valueArray = [];
+        // Iterate over the graphic height
+        for(let y = 0; y < floor(this.graphic.height / this.sourceSampleRate); y++)
+          {
+            let valueRow = [];
+            // Iterate over the graphic width
+            for(let x = 0; x < floor(this.graphic.width / this.sourceSampleRate); x++)
+              {
+                let brightness = brightnessArray[x][y];
+                
+                let remappedValue = floor(map(floor(brightness), 255, 0, 0, this.valueStops - 1));
+                
+                valueRow.push(remappedValue);
+              }
+            valueArray[y] = valueRow;
+          }
+        
+        return valueArray;
+      }
+      
+      renderZigxels(valueArray)
+      {
+        // White out the background
+        background(255);
+        
+        // Get the size of the zigxel based on the scale difference between the canvas and the graphic
+        let zigxelWidth = (width / (this.graphic.width / this.sourceSampleRate));
+        let zigxelHeight = (height / (this.graphic.height / this.sourceSampleRate));
+        
+        for(let x = 0; x < width / (width / (this.graphic.width / this.sourceSampleRate)); x++)
+          {
+            for(let y = 0; y < height / (height / (this.graphic.height / this.sourceSampleRate)); y++)
+              {
+                let position = createVector(x * (width / (this.graphic.width / this.sourceSampleRate)), y * (height / (this.graphic.height / this.sourceSampleRate)));
+                let size = createVector(zigxelWidth, zigxelHeight);
+                let direction = ((x + y * (width / (width / (this.graphic.width / this.sourceSampleRate)))) % 2) == 1;
+                this.renderZigxel(position, size, direction, valueArray[x][y]);
+              }
+          }
+      }
+      
+      renderZigxel(position, size, direction, value)
+        {
+          let lineCount = this.baseZigs * value;
+
+          // Get Edge Points
+          let top = [];
+          let left = [];
+          let right = [];
+          let bottom = [];
+          for(let l = 0; l < (lineCount/2); l++)
+            {
+              top.push(createVector(position.x + ((size.x / (lineCount/2)) * l) + ((size.x / (lineCount/2)) / 2), position.y))
+              left.push(createVector(position.x, position.y - (position.x - (position.x + ((size.x / (lineCount/2)) * l) + ((size.x / (lineCount/2)) / 2)))));
+              right.push(createVector(position.x + size.x, position.y - (position.x - (position.x + ((size.x / (lineCount/2)) * l) + ((size.x / (lineCount/2)) / 2)))));
+              bottom.push(createVector(position.x + ((size.x / (lineCount/2)) * l) + ((size.x / (lineCount/2)) / 2), position.y + size.y));
+            }
+
+          let connectedEdges1 = [top, left];
+          let connectedEdges2 = [right, bottom];
+
+          if(!direction)
+            {
+              connectedEdges1 = [left.reverse(), bottom];
+              connectedEdges2 = [top.reverse(), right];
+            }
+
+          // Connect the edge points with lines
+          for(let e = 0; e < connectedEdges1[0].length; e++)
+            {
+              let start1 = connectedEdges1[0][e];
+              let end1 = connectedEdges1[1][e];
+
+              let start2 = connectedEdges2[0][e];
+              let end2 = connectedEdges2[1][e];
+
+              noFill();
+              stroke(color('black'));
+              strokeWeight(this.strokeSize);
+
+              line(start1.x, start1.y, end1.x, end1.y);
+              line(start2.x, start2.y, end2.x, end2.y);
+            }
+        }
+      
+      getGifFrame(frame)
+      {
+        let gifClone = this.graphic.get();
+        // access original gif properties
+        let gp = this.graphic.gifProperties;
+        // make a new object for the clone
+        gifClone.gifProperties = {
+          displayIndex: gp.displayIndex,
+          // we still point to the original array of frames
+          frames: gp.frames,
+          lastChangeTime: gp.lastChangeTime,
+          loopCount: gp.loopCount,
+          loopLimit: gp.loopLimit,
+          numFrames: gp.numFrames,
+          playing: gp.playing,
+          timeDisplayed: gp.timeDisplayed
+        };
+        // optional tweak the start frame
+        gifClone.setFrame(frame % gp.numFrames);
+
+        return gifClone;
+      }
+    }
+  
+  this.zigxelRenderer = new ZigxelRenderer(effectImg);
+  this.time = 0;
+
+  this.setup = function () {
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+    this.zigxelRenderer.renderZigxelImage(floor(this.time));
+  };
+
+  this.draw = function() {
+    // background(0);
+    this.time += deltaTime / 125;
+    this.zigxelRenderer.renderZigxelImage(floor(this.time));
+  }
+}
+
+// Diagram Scene
+function Logo_Diagram()
+{
+  class CircleGenerator
+    {
+      constructor()
+      {
+        this.count = 32;
+        
+        this.circles = [];
+        this.linkedCircles = [];
+        this.tangentCircles = [];
+        this.patternCircles = [];
+        
+        this.linkChance = 0.01;
+        this.linkMax = round(this.count / 3);
+        this.tangentChance = 0.009;
+        this.tangentMax = round(this.count / 4);
+        this.circleSizes = createVector(15,50);
+        
+        this.tangentFills = [color('#FFC107'), color('#2196F3'), color('#E91E81')];
+        
+        this.generateCircles();
+      }
+      
+      generateCircles()
+      {
+        while(this.circles.length < this.count)
+          {
+            let radius = random(this.circleSizes.x, this.circleSizes.y);
+            let center = createVector(random(radius, width - radius), random(radius, width - radius));
+            
+            if(this.checkValidSpawn(center, radius))
+              {
+                let drawRadius = floor(random(0,2)) >= 1;
+                let fillCircle = floor(random(0,4)) >= 3;
+                let patternCircle = floor(random(0,3)) >= 2;
+                this.circles.push(new CircleObject(this, this.circles.length, center, radius, drawRadius, fillCircle, patternCircle));
+                if(patternCircle)
+                  {
+                    this.patternCircles.push(this.circles.length - 1);
+                  }
+              }
+            
+            // Try to link the most recent two circles
+            if(random(0,1) > 1 - this.linkChance && this.circles.length > 1 && this.linkedCircles.length <= this.linkMax)
+              {
+                this.linkedCircles.push([this.circles.length - 1, this.circles.length - 2]);
+              }
+            
+            // Try to tangent the most recent three circles
+            if(this.circles.length > 5 && ((random(0,1) > 1 - this.tangentChance && this.tangentCircles.length <= this.tangentMax) || this.tangentCircles < 1))
+              {
+                let centerIndex = floor(random(1, this.circles.length - 2));
+                this.tangentCircles.push([centerIndex - 1, centerIndex, centerIndex + 1]);
+              }
+          }
+      }
+      
+      renderCircles()
+      {
+        // // Remove the old pattern elements
+        // for(let e = 0; e < patternElements.length; e++)
+        //   {
+        //     patternElements[e].remove();
+        //   }
+        // patternElements = [];
+        
+        // Update the physics
+        for(let c of this.circles)
+          {
+              c.moveCircle();
+              c.bounceCircle();
+              c.renderCircle();
+              // for(let other of this.circles)
+              //   {
+              //       if (c !== other && c.intersects(other))
+              //       {
+              //         // The ball is bouncing off another ball
+              //           // let xVelocity = max(other.velocity.x, c.velocity.x);
+              //           // let yVelocity = max(other.velocity.y, c.velocity.y);
+              //           // c.velocity.x = xVelocity;
+              //           // c.velocity.y = yVelocity;
+              //           // other.velocity.x = xVelocity;
+              //           // other.velocity.y = yVelocity;
+                      
+              //           other.velocity.x *= -1;
+              //           other.velocity.y *= -1;
+              //       }
+              //   }
+          }
+        
+        // Render the tangent circles
+        for(let t = 0; t < this.tangentCircles.length; t++)
+          {
+            // Get the points on each circle that point towards the other
+            let circleA = this.circles[this.tangentCircles[t][0]];
+            let circleB = this.circles[this.tangentCircles[t][1]];
+            let circleC = this.circles[this.tangentCircles[t][2]];
+            
+            let tangentABLines = this.getCommonTangentLines(circleA.position, circleA.radius, circleB.position, circleB.radius);
+            let tangentLineAB = this.getClosestTangent(circleC.position, tangentABLines);
+            
+            let tangentACLines = this.getCommonTangentLines(circleA.position, circleA.radius, circleC.position, circleC.radius);
+            let tangentLineAC = this.getClosestTangent(circleB.position, tangentACLines);
+            
+            let tangentBCLines = this.getCommonTangentLines(circleB.position, circleB.radius, circleC.position, circleC.radius);
+            let tangentLineBC = this.getClosestTangent(circleA.position, tangentBCLines);
+            
+            let allTangents = [tangentLineAB, tangentLineAC, tangentLineBC];
+            
+            let lineAPoint1 = createVector(0, -(tangentLineAB.a * 0 + tangentLineAB.c) / tangentLineAB.b);
+            let lineAPoint2 = createVector(width, -(tangentLineAB.a * width + tangentLineAB.c) / tangentLineAB.b);
+            
+            let lineBPoint1 = createVector(0, -(tangentLineAC.a * 0 + tangentLineAC.c) / tangentLineAC.b);
+            let lineBPoint2 = createVector(width, -(tangentLineAC.a * width + tangentLineAC.c) / tangentLineAC.b);
+            
+            let lineCPoint1 = createVector(0, -(tangentLineBC.a * 0 + tangentLineBC.c) / tangentLineBC.b);
+            let lineCPoint2 = createVector(width, -(tangentLineBC.a * width + tangentLineBC.c) / tangentLineBC.b);
+            
+            let pointA = this.getLinesIntersection(lineAPoint1, lineAPoint2, lineBPoint1, lineBPoint2);
+            let pointB = this.getLinesIntersection(lineCPoint1, lineCPoint2, lineBPoint1, lineBPoint2);
+            let pointC = this.getLinesIntersection(lineCPoint1, lineCPoint2, lineAPoint1, lineAPoint2);
+            
+            // Render the tangent points
+            noFill();
+            stroke(color('black'));
+            strokeWeight(4);
+            
+            point(pointA.x,pointA.y);
+            point(pointB.x,pointB.y);
+            point(pointC.x,pointC.y);
+            
+            // Render the tangent fills
+            let tangentShapes = [[lineAPoint1, lineBPoint1, lineBPoint2, lineAPoint2], [lineCPoint1, lineBPoint1, lineBPoint2, lineCPoint2], [lineCPoint1, lineAPoint1, lineAPoint2, lineCPoint2]];
+            for(let s = 0; s < tangentShapes.length; s++)
+              {
+                let shapeColor = this.tangentFills[s % this.tangentFills.length];
+                
+                blendMode(OVERLAY);
+                noStroke();
+                fill(shapeColor);
+                drawingContext.setLineDash([0,0]);
+                
+                let shape = tangentShapes[s];
+                beginShape();
+                for(let v = 0; v < shape.length; v++)
+                  {
+                    vertex(shape[v].x, shape[v].y)
+                  }
+
+                endShape();
+              }
+            
+            // Render the tangent lines
+            for(let l = 0; l < allTangents.length; l++)
+              {
+                let pointA = createVector(0, -(allTangents[l].a * 0 + allTangents[l].c) / allTangents[l].b);
+                let pointB = createVector(width, -(allTangents[l].a * width + allTangents[l].c) / allTangents[l].b);
+                
+                blendMode(BLEND);
+                noFill();
+                stroke(color('black'));
+                strokeWeight(1);
+                drawingContext.setLineDash([0,0]);
+
+                line(pointA.x, pointA.y, pointB.x, pointB.y);
+              }
+          }
+        
+        // Render circles
+        for(let c = 0; c < this.circles.length; c++)
+          {
+            this.circles[c].renderCircle();
+          }
+        
+        // Render the linked circles
+        for(let l = 0; l < this.linkedCircles.length; l++)
+          {
+            // Get the points on each circle that point towards the other
+            let circleA = this.circles[this.linkedCircles[l][0]];
+            let circleB = this.circles[this.linkedCircles[l][1]];
+            
+            let circleAPoint = circleA.getNearestPointOnCircle(circleB.position);
+            let circleBPoint = circleB.getNearestPointOnCircle(circleA.position);
+            
+            // Render the connecting line
+            noFill();
+            stroke(color('black'));
+            strokeWeight(1);
+            drawingContext.setLineDash([8,8]);
+            
+            line(circleAPoint.x, circleAPoint.y, circleBPoint.x, circleBPoint.y);
+          }
+      }
+      
+      checkValidSpawn(center, radius)
+      {
+        for(let c = 0; c < this.circles.length; c++)
+          {
+            if(this.circles[c].isWithinRadius(center, radius))
+              {
+                return false;
+              }
+          }
+        return true;
+      }
+      
+      getCommonTangentLines(center1, radius1, center2, radius2)
+        {
+          // Compute the common tangent line of two circles: (center1.x, center1.y) - radius1 and (center2.x, center2.y) - radius2
+          // Return in the form of line equation: ax + by + c == 0
+          let delta1 = (center1.x - center2.x) * (center1.x - center2.x) + (center1.y - center2.y) * (center1.y - center2.y) - (radius1 + radius2) * (radius1 + radius2);
+          let delta2 = (center1.x - center2.x) * (center1.x - center2.x) + (center1.y - center2.y) * (center1.y - center2.y) - (radius1 - radius2) * (radius1 - radius2);
+          let p1 = radius1 * (center1.x * center2.x + center1.y * center2.y - center2.x * center2.x - center2.y * center2.y);
+          let p2 = radius2 * (center1.x * center1.x + center1.y * center1.y - center1.x * center2.x - center1.y * center2.y);
+          let q = center1.x * center2.y - center2.x * center1.y;
+          let results = [];
+          if(delta1 >= 0) {
+            let l11 = {
+              a: (center2.x - center1.x) * (radius1 + radius2) + (center1.y - center2.y) * Math.sqrt(delta1),
+              b: (center2.y - center1.y) * (radius1 + radius2) + (center2.x - center1.x) * Math.sqrt(delta1),
+              c: p1 + p2 + q * Math.sqrt(delta1)
+            };
+            let l12 = {
+              a: (center2.x - center1.x) * (radius1 + radius2) - (center1.y - center2.y) * Math.sqrt(delta1),
+              b: (center2.y - center1.y) * (radius1 + radius2) - (center2.x - center1.x) * Math.sqrt(delta1),
+              c: p1 + p2 - q * Math.sqrt(delta1)
+            };
+            results.push(l11);
+            results.push(l12);
+          }
+          if(delta2 >= 0) {
+            let l21 = {
+              a: (center2.x - center1.x) * (radius1 - radius2) + (center1.y - center2.y) * Math.sqrt(delta2),
+              b: (center2.y - center1.y) * (radius1 - radius2) + (center2.x - center1.x) * Math.sqrt(delta2),
+              c: p1 - p2 + q * Math.sqrt(delta2)
+            };
+            let l22 = {
+              a: (center2.x - center1.x) * (radius1 - radius2) - (center1.y - center2.y) * Math.sqrt(delta2),
+              b: (center2.y - center1.y) * (radius1 - radius2) - (center2.x - center1.x) * Math.sqrt(delta2),
+              c: p1 - p2 - q * Math.sqrt(delta2)
+            };
+            results.push(l21);
+            results.push(l22);
+          }
+          return results;
+        }
+      
+      getClosestTangent(center, lines)
+      {
+        let closestLine;
+        let closestDistance;
+        
+        for(let l = 0; l < lines.length; l++)
+          {
+            let lineEquation = lines[l];
+            let pointA = createVector(0, -(lineEquation.a * 0 + lineEquation.c) / lineEquation.b);
+            let pointB = createVector(width, -(lineEquation.a * width + lineEquation.c) / lineEquation.b);
+            
+            let lineDist = this.getDistanceToLine(center, pointA, pointB);
+            
+            if(closestDistance === undefined || lineDist < closestDistance)
+              {
+                closestDistance = lineDist;
+                closestLine = lines[l];
+              }
+          }
+        
+        return closestLine;
+      }
+      
+      getDistanceToLine(center, linePoint1, linePoint2)
+      {
+        return Math.abs(((center.x * (linePoint2.y - linePoint1.y)) - (center.y * (linePoint2.x - linePoint1.x)) + (linePoint2.x * linePoint1.y) - (linePoint2.y * linePoint1.x))) / Math.sqrt(((linePoint2.y - linePoint1.y) ^ 2) + ((linePoint2.x - linePoint1.x) ^ 2));
+      }
+      
+      getLinesIntersection(line1Point1, line1Point2, line2Point1, line2Point2)
+        {
+            var ua, ub, denom = (line2Point2.y - line2Point1.y)*(line1Point2.x - line1Point1.x) - (line2Point2.x - line2Point1.x)*(line1Point2.y - line1Point1.y);
+            if (denom == 0) {
+                return null;
+            }
+            ua = ((line2Point2.x - line2Point1.x)*(line1Point1.y - line2Point1.y) - (line2Point2.y - line2Point1.y)*(line1Point1.x - line2Point1.x))/denom;
+            ub = ((line1Point2.x - line1Point1.x)*(line1Point1.y - line2Point1.y) - (line1Point2.y - line1Point1.y)*(line1Point1.x - line2Point1.x))/denom;
+            return {
+                x: line1Point1.x + ua * (line1Point2.x - line1Point1.x),
+                y: line1Point1.y + ua * (line1Point2.y - line1Point1.y),
+                seg1: ua >= 0 && ua <= 1,
+                seg2: ub >= 0 && ub <= 1
+            };
+        }
+      
+      renderTangentLines(lines)
+      {
+        for(let l = 0; l < lines.length; l++)
+          {
+            let lineEquation = lines[l];
+            let pointA = createVector(0, -(lineEquation.a * 0 + lineEquation.c) / lineEquation.b);
+            let pointB = createVector(width, -(lineEquation.a * width + lineEquation.c) / lineEquation.b);
+            
+            let randomColor = color([(l/lines.length * 255), 0, 255 - (l/lines.length * 255)]);
+            
+            noFill();
+            stroke(randomColor);
+            strokeWeight(1);
+            drawingContext.setLineDash([0,0]);
+            
+            line(pointA.x, pointA.y, pointB.x, pointB.y);
+            
+            noFill();
+            stroke(randomColor);
+            strokeWeight(3);
+            
+            point(pointA.x, pointA.y);
+            point(pointB.x, pointB.y);
+            
+            noStroke();
+            fill(randomColor);
+            textSize(12);
+            
+            text("Line " + l, (l + 1) * 45, height);
+          }
+        
+            
+      }
+    }
+
+  class CircleObject
+    {
+      constructor(handler, index, position, radius, drawRadius, fillCircle, patternCircle)
+      {
+        this.handler = handler;
+        
+        this.index = index;
+        
+        this.radius = radius;
+        this.diameter = this.radius * 2;
+        this.position = position;
+        this.lastPosition = null;
+        
+        this.drawRadius = drawRadius;
+        if(drawRadius === undefined)
+          {
+            this.drawRadius = false;
+          }
+        this.fillCircle = fillCircle;
+        if(fillCircle === undefined)
+          {
+            this.fillCircle = false;
+          }
+        this.patternCircle = patternCircle;
+        if(patternCircle === undefined)
+          {
+            this.patternCircle = false;
+          }
+        
+        this.velocity = createVector(random(-0.5,0.5), random(-0.5,0.5));
+        
+        // this.generateElements();
+      }
+      
+      // generateElements()
+      // {
+      //   // Create the pattern circle
+      //   if(this.patternCircle)
+      //     {
+      //       let patternElement = createDiv();
+      //       patternElement.position(this.position.x - this.radius, this.position.y - this.radius);
+      //       patternElement.size(this.diameter, this.diameter);
+      //       patternElement.class('pattern');
+            
+      //       patternElements.push(patternElement);
+      //     }
+      // }
+      
+      renderCircle()
+      {
+        // Draw Main Circle
+        if(this.fillCircle)
+          {
+            fill(color('white'));
+          }
+        else
+          {
+            noFill();
+          }
+        stroke(color('black'));
+        strokeWeight(1);
+        drawingContext.setLineDash([0,0]);
+        
+        circle(this.position.x, this.position.y, this.diameter);
+
+        // Draw Radius
+        if(this.drawRadius)
+          {
+            // Draw Radius Line
+            noFill();
+            stroke(color('black'));
+            strokeWeight(1);
+
+            line(this.position.x, this.position.y, this.position.x + this.radius, this.position.y);
+
+            // Draw Radius Text
+            if(!this.patternFill)
+              {
+                noStroke();
+                fill(color('black'));
+                textAlign(CENTER);
+                textSize(Clamp(this.radius * 0.15, 4, 16));
+                textStyle(BOLD);
+                textFont('Helvetica');
+
+                text(round(this.radius.toString()), this.position.x + (this.radius/2), this.position.y - Clamp(this.radius * 0.1, 1, this.radius)/2);
+              }
+
+            // Draw Center
+            noFill();
+            stroke(color('black'));
+            strokeWeight(Clamp(this.radius * 0.1, 1, this.radius));
+
+            point(this.position.x, this.position.y)
+          }
+        
+        // Draw the pattern fill
+        // this.generateElements();
+        
+        // Store the position as the last position
+        this.lastPosition = createVector(0,0).add(this.position);
+      }
+      
+      moveCircle()
+      {
+          this.position.add(this.velocity);
+          this.checkStall();
+    }
+      
+      bounceCircle()
+      {
+      if (this.position.x > width - this.radius || this.position.x < 0 + this.radius) {
+        this.velocity.x *= -1;
+      }
+      if (this.position.y > height - this.radius || this.position.y < 25 + this.radius) {
+        this.velocity.y *= -1;
+      }
+    }
+      
+      checkStall()
+      {
+        let positionPrecision = 100;
+        if(this.lastPosition != null && (round(this.lastPosition.x * positionPrecision)/positionPrecision === round(this.position.x * positionPrecision)/positionPrecision) && (round(this.lastPosition.y * positionPrecision)/positionPrecision === round(this.position.y * positionPrecision)/positionPrecision))
+            {
+              // print('stall!');
+            }
+      }
+      
+      isWithinRadius(center, radius)
+      {
+        return this.position.dist(center) <= radius + this.radius;
+      }
+      
+      intersects(other)
+      {
+      let d = dist(this.position.x, this.position.y, other.position.x, other.position.y);
+      return (d < this.radius + other.radius);
+    }
+      
+      getNearestPointOnCircle(point)
+      {
+        return p5.Vector.sub(point, this.position).setMag(this.radius).add(this.position);
+      }
+    }
+  
+  this.circleHandler = new CircleGenerator();
+
+  this.setup = function() {
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+    randomSeed(year() + month() + day() + hour() + minute() + second());
+    background(128);
+    this.circleHandler.renderCircles();
+  }
+
+  this.draw = function() {
+    blendMode(BLEND);
+    background(128);
+    this.circleHandler.renderCircles();
+  }
 }
