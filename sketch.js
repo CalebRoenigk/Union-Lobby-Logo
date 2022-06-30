@@ -17,7 +17,6 @@ function setup() {
 
   // Preload scenes. Preloading is normally optional
   // ... but needed if showNextScene() is used.
-  mgr.addScene(Logo_Spray);
   mgr.addScene(Logo_Clock); // Need to add Dynamic Colors
   mgr.addScene(Logo_Strings); // Need to add Dynamic Colors
   mgr.addScene(Logo_Quilt); // Need to add Dynamic Colors, Random Seed
@@ -39,10 +38,10 @@ function setup() {
   mgr.addScene(Logo_Zigxel); // Need to add Dynamic Colors
   // mgr.addScene(Logo_Diagram); // Disabled until tangent lines bug can be fixed Need to add Dynamic Colors
   mgr.addScene(Logo_Pond);
-  mgr.addScene(Logo_Spray);
+  // mgr.addScene(Logo_Spray); // Some Kind of Flicker bug here...
   mgr.addScene(Logo_Golf);
   mgr.addScene(Logo_Galaga);
-  mgr.addScene(Logo_Electrons); // Need to add Dynamic Colors
+  // mgr.addScene(Logo_Electrons); // Need to add Dynamic Colors and some Kind of Flicker bug here...
 
   mgr.showNextScene();
   maskEditor = new MaskEditor();
