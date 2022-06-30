@@ -8,7 +8,7 @@ let galaga;
 
 function preload() {
   effectImg = loadImage('assets/img/animation.gif');
-  sprites = loadImage("/assets/img/galagaSprites.png");
+  sprites = loadImage("assets/img/galagaSprites.png");
 }
 
 function setup() {
@@ -17,7 +17,6 @@ function setup() {
 
   // Preload scenes. Preloading is normally optional
   // ... but needed if showNextScene() is used.
-  mgr.addScene(Logo_Collapse);
   mgr.addScene(Logo_Clock); // Need to add Dynamic Colors
   mgr.addScene(Logo_Strings); // Need to add Dynamic Colors
   mgr.addScene(Logo_Quilt); // Need to add Dynamic Colors, Random Seed
