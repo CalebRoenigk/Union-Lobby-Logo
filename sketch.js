@@ -17,7 +17,6 @@ function setup() {
 
   // Preload scenes. Preloading is normally optional
   // ... but needed if showNextScene() is used.
-  mgr.addScene(Logo_Spray);
   mgr.addScene(Logo_Clock); // Need to add Dynamic Colors
   mgr.addScene(Logo_Strings); // Need to add Dynamic Colors
   mgr.addScene(Logo_Quilt); // Need to add Dynamic Colors, Random Seed
@@ -28,10 +27,11 @@ function setup() {
   mgr.addScene(Logo_Scales); // Need to add Dynamic Colors
   mgr.addScene(Logo_Trains); // Need to add Dynamic Colors
   mgr.addScene(Logo_Holographic);
+  mgr.addScene(Logo_Pond);
   mgr.addScene(Logo_Swirl); // Need to add Dynamic Colors
   mgr.addScene(Logo_LCD); // Need to add Dynamic Colors
   mgr.addScene(Logo_Topography); // Need to add Dynamic Colors
-  mgr.addScene(Logo_Particles); // Need to add Dynamic Colors
+  // mgr.addScene(Logo_Particles); // Need to add Dynamic Colors, too buggy, please remove
   // mgr.addScene ( Logo_Cracks ); // Disabled until dependancy bug can be fixed Need to add Dynamic Colors
   mgr.addScene ( Logo_Collapse );
   mgr.addScene(Logo_Type); // Need to add Dynamic Colors
@@ -45,6 +45,16 @@ function setup() {
 
   mgr.showNextScene();
   maskEditor = new MaskEditor();
+  
+  // Auto refresh every 24 hrs
+  let hourCurrent = hour();
+  let minuteCurrent = minute();
+  let currentMilli = (((hourCurrent * 60) * 60) * 1000) + ((minuteCurrent * 60) * 1000);
+  let maxMilli = (((23 * 60) * 60) * 1000) + ((59 * 60) * 1000);
+  let milliToMidnight = abs(maxMilli - currentMilli); // ABS just in case
+  setInterval(function () {
+    location.reload();
+  }, milliToMidnight);
 }
 
 function draw() {
@@ -5143,8 +5153,9 @@ function Logo_Pond()
 {
   class Fish
     {
-      constructor(position, debug, bodyColor)
+      constructor(index,position, debug, bodyColor)
       {
+        this.index = index;
         this.position = position;
         this.resolution = Clamp(5, 3, 100);
         this.length = 75;
@@ -5211,6 +5222,7 @@ function Logo_Pond()
         
         this.getSpineTargets();
         this.generateSpine();
+        this.updateTarget();
       }
       
       // Returns a fin color from a given body color
@@ -5292,6 +5304,7 @@ function Logo_Pond()
         this.speed = this.velocity.mag();
         
         // Update the facing
+        angleMode(RADIANS);
         let facingHeading = lerp(this.facing.heading(), this.targetFacing.heading(), this.facingSpeed);
         this.facing.setHeading(facingHeading);
         
@@ -5861,6 +5874,7 @@ function Logo_Pond()
         // Draw the creases
         if(offset.x == 0 && offset.y == 0)
           {
+            noFill();
             stroke(this.creaseColor);
             strokeWeight(this.creaseWeight);
             
@@ -5996,15 +6010,17 @@ function Logo_Pond()
     createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
     randomSeed(year() + month() + day() + hour() + minute() + second());
     let fishColors = [color('#607D8B'), color('#E79721'), color('#D34B0D'), color('#FCFBCC')];
+    this.fish = [];
     for(let i = 0; i < this.fishCount; i++)
       {
-        this.fish.push(new Fish(createVector(random(0, width), random(0, height)), this.debug, fishColors[round(random(0, fishColors.length - 1))]));
+        this.fish.push(new Fish(i,createVector(random(0, width), random(0, height)), this.debug, fishColors[round(random(0, fishColors.length - 1))]));
       }
     
     for(let i = 0; i < this.lillyPadCount; i++)
       {
         this.lillyPads.push(new LillyPad(createVector(random(this.lillyPadPadding, width - this.lillyPadPadding), random(this.lillyPadPadding, height - this.lillyPadPadding)), random(this.lillyPadMinSize,this.lillyPadMaxSize), this.debug, this.lillyPadMinSize, this.lillyPadMaxSize));
       }
+    print('setup')
   }
 
   this.draw = function() {
