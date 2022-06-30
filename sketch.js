@@ -120,21 +120,21 @@ class MaskEditor {
   generateMaskPoints() {
     this.masks.push(
       new Mask(createVector(width / 2, height), createVector(0, 0), [
-        new MaskPoint(0, createVector(60, 37), "vertex"),
-        new MaskPoint(1, createVector(71, 559), "vertex"),
-        new MaskPoint(2,createVector(107, 767),"quadratic",createVector(71, 559)),
-        new MaskPoint(3,createVector(107, 767),"quadratic",createVector(326, 782)),
-        new MaskPoint(4, createVector(326, 782), "vertex"),
-        new MaskPoint(5, createVector(319, 33), "vertex"),
+        new MaskPoint(0, createVector(64, 39), "vertex"),
+        new MaskPoint(1, createVector(75, 547), "vertex"),
+        new MaskPoint(2,createVector(111, 755),"quadratic",createVector(75, 547)),
+        new MaskPoint(3,createVector(111, 755),"quadratic",createVector(324, 769)),
+        new MaskPoint(4, createVector(324, 769), "vertex"),
+        new MaskPoint(5, createVector(316, 34), "vertex"),
       ])
     );
 
     this.masks.push(
       new Mask(createVector(width / 2, height), createVector(width / 2, 0), [
-        new MaskPoint(0, createVector(491, 25), "vertex"),
-        new MaskPoint(1, createVector(492, 777), "vertex"),
-        new MaskPoint(2, createVector(742, 770), "vertex"),
-        new MaskPoint(3, createVector(745, 24), "vertex"),
+        new MaskPoint(0, createVector(485, 18), "vertex"),
+        new MaskPoint(1, createVector(488, 766), "vertex"),
+        new MaskPoint(2, createVector(737, 766), "vertex"),
+        new MaskPoint(3, createVector(736, 27), "vertex"),
       ])
     );
 
