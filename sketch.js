@@ -17,7 +17,7 @@ function setup() {
 
   // Preload scenes. Preloading is normally optional
   // ... but needed if showNextScene() is used.
-  mgr.addScene(Logo_Galaga);
+  mgr.addScene(Logo_Collapse);
   mgr.addScene(Logo_Clock); // Need to add Dynamic Colors
   mgr.addScene(Logo_Strings); // Need to add Dynamic Colors
   mgr.addScene(Logo_Quilt); // Need to add Dynamic Colors, Random Seed
@@ -33,7 +33,7 @@ function setup() {
   mgr.addScene(Logo_Topography); // Need to add Dynamic Colors
   mgr.addScene(Logo_Particles); // Need to add Dynamic Colors
   // mgr.addScene ( Logo_Cracks ); // Disabled until dependancy bug can be fixed Need to add Dynamic Colors
-  // mgr.addScene ( Logo_Collapse ); // Disabled until rendering bug can be fixed Need to add Dynamic Colors
+  mgr.addScene ( Logo_Collapse );
   mgr.addScene(Logo_Type); // Need to add Dynamic Colors
   mgr.addScene(Logo_Zigxel); // Need to add Dynamic Colors
   // mgr.addScene(Logo_Diagram); // Disabled until tangent lines bug can be fixed Need to add Dynamic Colors
@@ -41,6 +41,7 @@ function setup() {
   mgr.addScene(Logo_Spray);
   mgr.addScene(Logo_Golf);
   mgr.addScene(Logo_Galaga);
+  mgr.addScene(Logo_Electrons); // Need to add Dynamic Colors
 
   mgr.showNextScene();
   maskEditor = new MaskEditor();
@@ -50,12 +51,12 @@ function draw() {
   mgr.draw();
   maskEditor.drawMask();
   
-  // if (keyIsDown(LEFT_ARROW) && maskEditor.configureMode == true) {
-  //   maskEditor.printMaskPoints();
-  // }
-  // if (keyIsDown(RIGHT_ARROW)) {
-  //   maskEditor.configureMode = !maskEditor.configureMode;
-  // }
+  if (keyIsDown(LEFT_ARROW) && maskEditor.configureMode == true) {
+    maskEditor.printMaskPoints();
+  }
+  if (keyIsDown(RIGHT_ARROW)) {
+    maskEditor.configureMode = !maskEditor.configureMode;
+  }
 }
 
 function mousePressed() {
@@ -3980,82 +3981,6 @@ function Logo_Cracks() {
 
     return Math.abs(total);
   }
-}
-
-// Collapse Scene
-function Logo_Collapse() {
-  class TileRenderer {
-    constructor(canvasGraphic) {
-      this.time = 0;
-
-      this.canvas = canvasGraphic;
-
-      this.rows = 28;
-      this.columns = 14;
-
-      this.tileSpeed = 12;
-
-      this.graphic = createGraphics(width, height);
-    }
-
-    renderCollapse() {
-      // Update the tile graphic
-      this.renderTiles();
-
-      // Create the planes
-      this.canvas.texture(this.graphic);
-      this.canvas.rotateX(45);
-      this.canvas.noStroke();
-      this.canvas.plane(width * 2);
-
-      this.canvas.rotateX(90);
-      this.canvas.plane(width * 2);
-    }
-
-    renderTiles() {
-      this.time += deltaTime / 1000;
-
-      let tileSize = createVector(
-        this.graphic.width / this.columns,
-        this.graphic.height / this.rows
-      );
-      for (let x = 0; x < this.columns; x++) {
-        for (let y = 0; y < this.rows * 2; y++) {
-          let start = createVector(tileSize.x * x, tileSize.y * y);
-          let yOffset = (this.time * this.tileSpeed) % this.graphic.height;
-          start.add(createVector(0, -yOffset));
-
-          this.graphic.noStroke();
-          this.graphic.fill(color("black"));
-          if ((x + y) % 2 == 0) {
-            this.graphic.fill(color("white"));
-          }
-
-          this.graphic.rect(start.x, start.y, tileSize.x, tileSize.y);
-        }
-      }
-    }
-  }
-
-  this.canvasGraphic = createGraphics(
-    mgr.canvasSize.x,
-    mgr.canvasSize.y,
-    WEBGL
-  );
-  this.tileRenderer = new TileRenderer(this.canvasGraphic);
-
-  function setup() {
-    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
-    this.canvasGraphic.angleMode(DEGREES);
-    this.canvasGraphic.perspective(125, 1, 0.1, width / 2);
-    this.canvasGraphic.camera(0, 0, 250, 0, 0, 0);
-  }
-
-  this.draw = function () {
-    this.canvasGraphic.background(220);
-    this.tileRenderer.renderCollapse();
-    image(this.tileRenderer.canvas, 0, 0);
-  };
 }
 
 // Clock Scene
@@ -10061,4 +9986,199 @@ function Logo_Galaga()
   this.draw = function() {
     galaga.render();
   }
+}
+
+// Electrons Scene
+function Logo_Electrons()
+{
+  class VectorField
+    {
+      constructor()
+      {
+        this.debug = true;
+        this.res = 24;
+      }
+
+      render(time)
+      {
+        blendMode(DARKEST);
+        background(color('rgba(0,0,0,0.04)'));
+
+        blendMode(BLEND);
+        noFill();
+        strokeWeight(6);
+
+        for(let x = -(this.res/2); x < this.res/2; x++)
+          {
+            for(let y = -(this.res/2); y < this.res/2; y++)
+              {
+                let origin = createVector(x * (width / this.res),y * (height / this.res));
+                let vector = this.field(origin, time).normalize().mult((Math.sin((time + (x * y)) * 0.125) * 12) * 12).add(origin);
+
+                let offset = createVector(width/2, height/2);
+
+                stroke(color('rgba(255,255,255, 1)'));
+
+                point(vector.x + offset.x, vector.y + offset.y);
+              }
+          }
+      }
+
+      field(point, time)
+      {
+        let mainScale = 0.125;
+        let mainSize = 100;
+        // let mainNoise = createVector(Math.sin(Math.cos((point.y - (time * mainSize)) * mainScale)), Math.tan(Math.cos((point.y + point.x + (time * mainSize)) * mainScale)));
+        let mainNoise = createVector(Math.sin((point.x + time) * mainScale), Math.cos((point.y - time) * mainScale));
+
+        let scaleSub = 0.005;
+        let subNoise = createVector(Math.sin((point.y + point.x) * scaleSub), Math.cos((point.y - point.x) * scaleSub));
+
+        return mainNoise.add(subNoise);
+      }
+    }
+  
+  this.time = 0;
+
+  this.setup = function() {
+    mgr.clearFrames = false;
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+    randomSeed(year() + month() + day() + hour() + minute() + second());
+    background(0);
+  }
+
+  this.draw = function() {
+    // background(220);
+    this.time += deltaTime / 1000;
+    new VectorField().render(this.time);
+  }
+}
+
+// Collapse Scene
+function Logo_Collapse()
+{
+  class CollapseRenderer
+    {
+      constructor()
+      {
+        this.columns = 32;
+        this.center = createVector(width/2, height/2);
+        this.width = width * 16;
+        this.height = height * 2;
+        this.perspective = 6;
+        this.squareSize = 12;
+        this.trippyScale = 50;
+
+        this.columnPoints = [];
+
+        this.generateColumns();
+      }
+
+      generateColumns()
+      {
+        this.columnPoints = [];
+        let columnInterval = this.width / this.columns;
+        for(let x = -this.columns/2; x < this.columns/2; x++)
+          {
+            // Top Column
+            let startTop = createVector((x * columnInterval) + (columnInterval/2), -this.height/2, 1);
+            let endTop = createVector((x * columnInterval) + (columnInterval/2), 0, this.perspective);
+
+            // Bottom Column
+            let startBottom = createVector((x * columnInterval) + (columnInterval/2), this.height/2, 1);
+            let endBottom = createVector((x * columnInterval) + (columnInterval/2), 0, this.perspective);
+
+            this.columnPoints.push([[startTop, endTop], [startBottom, endBottom]]);
+          }
+      }
+
+      render(time)
+      {
+        // this.columns = round(64 + (TriangleWave(1, 0.25, time) * 64) + 64);
+        this.generateColumns();
+
+        // print(this.columnPoints.length)
+        for(let i = 0; i < this.columnPoints.length; i++)
+          {
+            let top = this.columnPoints[i][0];
+            let bottom = this.columnPoints[i][1];
+
+            for(let q = 0; q < this.squareSize; q++)
+              {
+                for(let s = 0; s < 2; s++)
+                  {
+                    let square = this.generateSquare(((q/this.squareSize) + time) % 1, i, s);
+                    let distToCenter = map(p5.Vector.dist(square[4], this.center), 0, width, 0, 255);
+
+                    // let fillColor = color('black');
+                    // if((i + q) % 2 == 0)
+                    //   {
+                    //     fillColor = color('white');
+                    //   }
+                    let fillColor = color([(Math.cos((distToCenter + time)/this.trippyScale) + 1) * 128, distToCenter, (Math.sin((distToCenter - time)/this.trippyScale) + 1) * 128]);
+
+                    // Hue shift fill color
+                    let hU = (round(hue(fillColor)) + round(time * 90)) % 360;
+                    let sA = round(saturation(fillColor)) - 12;
+                    let bR = round(brightness(fillColor));
+
+                    // print(hU);
+
+                    fillColor = color('hsb(' + hU + ', ' + sA + '%, ' + bR + '%)');
+
+                    noStroke();
+                    fill(fillColor);
+
+                    beginShape();
+                    vertex(square[0].x, square[0].y);
+                    vertex(square[1].x, square[1].y);
+                    vertex(square[3].x, square[3].y);
+                    vertex(square[2].x, square[2].y);
+                    endShape();
+                  }
+              }
+          }
+      }
+
+      generateSquare(t, i, s)
+      {
+        let column = this.columnPoints[i][s];
+        let columnSize = this.width / this.columns;
+
+        let tCenter = Clamp(t,0,1);
+
+        let center = p5.Vector.lerp(column[0], column[1], tCenter);
+        let top = p5.Vector.lerp(column[0], column[1], Clamp(tCenter - (1 / this.squareSize),0,1));
+        let bottom = p5.Vector.lerp(column[0], column[1], Clamp(tCenter + (1 / this.squareSize),0,1));
+
+        let bottomL = createVector(-columnSize/2, 0).add(bottom);
+        let bottomR = createVector(columnSize/2, 0).add(bottom);
+        let topL = createVector(-columnSize/2, 0).add(top);
+        let topR = createVector(columnSize/2, 0).add(top);
+
+        return [this.getPerspectiveProjection(bottomL).add(this.center), this.getPerspectiveProjection(bottomR).add(this.center), this.getPerspectiveProjection(topL).add(this.center), this.getPerspectiveProjection(topR).add(this.center), this.getPerspectiveProjection(center).add(this.center)];
+        // return [top, center, bottom];
+      }
+
+      getPerspectiveProjection(point)
+      {
+        return point.div(point.z);
+      }
+    }
+  
+  this.collapseRenderer = new CollapseRenderer();
+  this.time = 0;
+
+  this.setup = function() {
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+    randomSeed(year() + month() + day() + hour() + minute() + second());
+  }
+
+  this.draw = function() {
+    background(220);
+    this.time += (deltaTime / 1000) / 8;
+    this.collapseRenderer.render(this.time);
+  }
+
+  
 }

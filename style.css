@@ -14,6 +14,7 @@ html, body {
   padding: 0;
   background: black;
 }
+
 canvas {
   display: block;
   position: absolute;
