@@ -141,7 +141,7 @@ class MaskEditor {
 
     this.masks.push(
       new Mask(createVector(width / 2, height), createVector(width / 2, 0), [
-        new MaskPoint(0, createVector(485, 18), "vertex"),
+        new MaskPoint(0, createVector(485, 27), "vertex"),
         new MaskPoint(1, createVector(488, 766), "vertex"),
         new MaskPoint(2, createVector(737, 766), "vertex"),
         new MaskPoint(3, createVector(736, 27), "vertex"),
