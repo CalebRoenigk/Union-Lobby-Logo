@@ -8,7 +8,7 @@ let galaga;
 
 function preload() {
   effectImg = loadImage('assets/img/animation.gif');
-  sprites = loadImage("assets/img/galagaSprites.png");
+  sprites = loadImage("assets/img/animation.gif");
 }
 
 function setup() {
