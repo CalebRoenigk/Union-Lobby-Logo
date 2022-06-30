@@ -5765,6 +5765,7 @@ function Logo_Pond()
         let creaseRotationInterval = (360 / (this.creaseCount + 1));
         for(let i = 0; i < this.creaseCount; i++)
           {
+            angleMode(DEGREES);
             let offsetDisplacement = round(random(-this.creaseMaxDisplacement, this.creaseMaxDisplacement));
             let creaseRotation = Clamp(((creaseRotationInterval * i) + offsetDisplacement) * (PI / 180), 0, 360 - (this.cutAngle * 2));
             let creasePoint = p5.Vector.rotate(startCreasePoint, creaseRotation);
