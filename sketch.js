@@ -17,6 +17,7 @@ function setup() {
 
   // Preload scenes. Preloading is normally optional
   // ... but needed if showNextScene() is used.
+  mgr.addScene(Logo_Spray);
   mgr.addScene(Logo_Clock); // Need to add Dynamic Colors
   mgr.addScene(Logo_Strings); // Need to add Dynamic Colors
   mgr.addScene(Logo_Quilt); // Need to add Dynamic Colors, Random Seed
@@ -6192,6 +6193,7 @@ function Logo_Spray()
 
   this.draw = function() {
     this.painter.render();
+    mgr.clearFrames = false;
   }
 }
 
@@ -10050,6 +10052,7 @@ function Logo_Electrons()
     // background(220);
     this.time += deltaTime / 1000;
     new VectorField().render(this.time);
+    mgr.clearFrames = false;
   }
 }
 
