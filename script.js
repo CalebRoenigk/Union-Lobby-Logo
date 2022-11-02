@@ -263,43 +263,52 @@ function loadSettings() {
   let name = 'p5jsLobbySettings';
   
   // Load the settings
-  console.log(localStorage.getItem(name));
-  let settings = JSON.parse(localStorage.getItem(name));
-  
-  // Load in the scene duration and canvas position
-  document.getElementById('editor-scenetime').value = settings.sceneDuration;
-  document.getElementById('editor-canvas-x').value = settings.canvasPosition[0];
-  document.getElementById('editor-canvas-y').value = settings.canvasPosition[1];
-  
-  updateCanvasPositionMarker();
-  
-  settings.playlistItems.forEach(element => {
-    let label = document.querySelector('[for="playlist-' + element.name + '"]')
-    if(label != null) {
-      // The scene exists
-      // {name: 'Logo', options: {enabled: true, selected: 'Union'}, enabled: true}
-      document.getElementById('playlist-' + element.name).checked = element.enabled;
-      if(element.options.enabled) {
-        // Set the selected option
-        let select = document.getElementById('playlist-' + element.name + '-options');
-        let found = false;
-        for (let i = 0; i < select.options.length; i++) {
-          if (select.options[i].text === element.options.selected) {
+  let settings = {};
+  if(localStorage.getItem(name) == null) {
+    settings = {
+      "sceneDuration":60,
+      "playlistItems":getPlaylistSettings(),
+      "canvasPosition":[
+        200,
+        200
+      ]
+    };
+  } else {
+    settings = JSON.parse(localStorage.getItem(name));
+
+    // Load in the scene duration and canvas position
+    document.getElementById('editor-scenetime').value = settings.sceneDuration;
+    document.getElementById('editor-canvas-x').value = settings.canvasPosition[0];
+    document.getElementById('editor-canvas-y').value = settings.canvasPosition[1];
+
+    updateCanvasPositionMarker();
+
+    settings.playlistItems.forEach(element => {
+      let label = document.querySelector('[for="playlist-' + element.name + '"]')
+      if(label != null) {
+        // The scene exists
+        // {name: 'Logo', options: {enabled: true, selected: 'Union'}, enabled: true}
+        document.getElementById('playlist-' + element.name).checked = element.enabled;
+        if(element.options.enabled) {
+          // Set the selected option
+          let select = document.getElementById('playlist-' + element.name + '-options');
+          let found = false;
+          for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].text === element.options.selected) {
               select.selectedIndex = i;
               found = true;
               break;
+            }
+          }
+
+          if(!found) {
+            select.selectedIndex = 0;
           }
         }
-        
-        if(!found) {
-          select.selectedIndex = 0;
-        }
+        playlistItemChanged(element.name);
       }
-      
-      playlistItemChanged(element.name);
-    }
-  });
-  
+    });
+  }
   editorSettings = settings;
 }
 
