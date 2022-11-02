@@ -216,7 +216,7 @@ input {
 #editor-playlist-container {
   width: 100%;
   height: auto;
-  max-height: 200px;
+  max-height: 500px;
   overflow-x: clip;
   overflow-y: auto;
 }
