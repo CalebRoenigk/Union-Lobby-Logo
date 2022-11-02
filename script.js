@@ -6,7 +6,7 @@ editorState = false;
 // Startup function
 function startup() {
   // Set up editor toggle
-  document.keydown = function (event) {
+  document.addEventListener('keydown', (event) => {
     let keycode = event.key;
     console.log(keycode);
       // e = e || window.event;
@@ -14,7 +14,7 @@ function startup() {
       //   editorState = !editorState;
       //   updateEditorState();
       // }
-  };
+  });
   
   // Update state of editor
   updateEditorState();
