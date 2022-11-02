@@ -4,7 +4,11 @@ editorSettings = {};
 editorState = false;
 
 // TODO: Reimplement scene manager and p5js
-// TODO: Determine how canvas element will be positioned?
+// TODO: Scene manager should submit a scene list when it runs the start function
+// TODO: Scene manager should constantly update the scene timeline
+// TODO: Scene manager to update scene duration every time it switches scenes
+// TODO: Scene manager to update the play queue every time it switches scenes
+// TODO: Scene list should include scene function name as well, and the option should be passed in as an arg of that function ex: logo('union)
 
 // Startup function
 function startup() {
