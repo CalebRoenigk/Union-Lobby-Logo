@@ -263,6 +263,7 @@ function loadSettings() {
   let name = 'p5jsLobbySettings';
   
   // Load the settings
+  console.log(localStorage.getItem(name));
   let settings = JSON.parse(localStorage.getItem(name));
   
   // Load in the scene duration and canvas position
