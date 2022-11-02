@@ -9,11 +9,10 @@ function startup() {
   document.addEventListener('keydown', (event) => {
     let keycode = event.key;
     console.log(keycode);
-      // e = e || window.event;
-      // if(e.keyCode == 96 || 126) {
-      //   editorState = !editorState;
-      //   updateEditorState();
-      // }
+    if(keycode == '`' || '~') {
+      editorState = !editorState;
+      updateEditorState();
+    }
   });
   
   // Update state of editor
