@@ -320,3 +320,51 @@ function loadSettings() {
 }
 
 startup();
+
+class LobbyScene {
+  constructor(name, options = new SceneOptions(), enabled = false) {
+    this.name = name;
+    this.options = options;
+    this.enabled = enabled;
+  }
+
+  // Acts like the standard sketch preload function
+  preload() {
+    
+  }
+  
+  // Acts like the standard sketch setup function
+  setup() {
+    
+  }
+  
+  // Acts like the standard sketch draw function
+  draw() {
+    
+  }
+}
+
+class SceneOptions {
+  constructor(enabled = false, values = [], selected = 0) {
+    this.enabled = enabled;
+    this.values = values;
+    this.selected = selected;
+  }
+  
+  // Sets the selected option
+  setSelected(value) {
+    if(typeof value === 'number') {
+      if(value <= this.values.length - 1) {
+        this.selected = this.values[value];
+      } else {
+        this.selected = this.values[0];
+      }
+    } else {
+      if(this.values.findIndex(value) !== -1) {
+        this.selected = this.values[this.values.findIndex(value)];
+      } else {
+        this.selected = this.values[0];
+      }
+    }
+  }
+}
