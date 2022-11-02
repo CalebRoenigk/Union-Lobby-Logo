@@ -8,7 +8,6 @@ function startup() {
   // Set up editor toggle
   document.addEventListener('keydown', (event) => {
     let keycode = event.key;
-    console.log(keycode);
     if(keycode == '`' || '~') {
       editorState = !editorState;
       updateEditorState();
