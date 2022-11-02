@@ -3,6 +3,9 @@ sceneList = [{name: 'Logo', options: {enabled: true, values: ['Union', 'NRG', 'N
 editorSettings = {};
 editorState = false;
 
+// TODO: Reimplement scene manager and p5js
+// TODO: Determine how canvas element will be positioned?
+
 // Startup function
 function startup() {
   // Set up editor toggle
@@ -127,14 +130,16 @@ function playlistItemChanged(item) {
   });
 }
 
-// Updates the position of the canvas marker
-function updateCanvasPositionMarker() {
+// Updates the position of the canvas and marker
+function updateCanvasPosition() {
   let x = document.getElementById('editor-canvas-x').value;
   let y = document.getElementById('editor-canvas-y').value;
   
   let marker = document.getElementById('canvas-position-marker');
   
   marker.setAttribute('style', '--top: ' + y + 'px;' + '--left: ' + x + 'px;');
+  
+  document.querySelector('canvas').setAttribute('style', '--top: ' + y + 'px;' + '--left: ' + x + 'px;');
 }
 
 // Updates the playhead of the timeline
@@ -279,7 +284,7 @@ function loadSettings() {
     document.getElementById('editor-canvas-x').value = settings.canvasPosition[0];
     document.getElementById('editor-canvas-y').value = settings.canvasPosition[1];
 
-    updateCanvasPositionMarker();
+    updateCanvasPosition();
 
     settings.playlistItems.forEach(element => {
       let label = document.querySelector('[for="playlist-' + element.name + '"]')
