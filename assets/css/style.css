@@ -190,7 +190,8 @@ input {
   height: var(--size);
   background-color: cyan;
   z-index: 100;
-  transition: 0.375s ease;
+  transform: translate(-50%, -50%);
+  transition:  opacity 0.3s ease;
 }
 
 #canvas-position-marker::after {
@@ -217,8 +218,14 @@ input {
   z-index: 100;
 }
 
-canvas {
+main {
   z-index: 1;
+}
+
+canvas {
+  position: absolute;
+  top: var(--top);
+  left: var(--left);
 }
 
 #editor-playlist-container {

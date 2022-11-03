@@ -7,20 +7,23 @@ function preload() {
 function setup() {
   console.log("setup");
   // Create the scene manager
-  // sceneManager = new SceneManager();
+  sceneManager = new SceneManager();
   
   // TODO: ADD SCENES TO THE SCENE MANAGER
   // sceneManager.scenes.push();
   
   // Run the scene manager preload operation
-  // sceneManager.preload();
+  sceneManager.preload();
   
   // Create the canvas
   createCanvas(400,400);
+
+  // Load Settings
+  loadSettings();
 }
 
 function draw() {
-  // sceneManager.draw();
+  sceneManager.draw();
 }
 
 // Utilities
@@ -39,8 +42,8 @@ class MathUtil {
   }
 
   // Clamp the value within a min and max range
-  clamp(value, min, max) {
-    return min(max(value,min), max);
+  clamp(value, minimum, maximum) {
+    return min(max(value,minimum), maximum);
   }
 }
 
@@ -259,10 +262,7 @@ function startup() {
   });
   document.querySelectorAll('select').forEach(element => {
     element.addEventListener('input', saveSettings);
-  }); 
-
-  // Load Settings
-  loadSettings(); 
+  });
 }
 
 function updateEditorState() {
@@ -538,227 +538,228 @@ function loadSettings() {
   editorSettings = settings;
 }
 
-//
-// class SceneManager {
-//   constructor(scenes = [], duration= 60, size = 800) {
-//     this.scenes = scenes;
-//     this.duration = duration;
-//     this.size = createVector(size,size);
-//    
-//     this.activeScene = scenes[0];
-//     this.sceneTimer = duration;
-//     this.transitionDuration = this.duration / 20; // A tenth of the total duration on either end of each scene
-//    
-//     // Null Scene
-//     this.nullScene = new NullScene();
-//   }
-//
-//   // Acts like the standard sketch preload function
-//   preload() {
-//     // Iterate over each scene and run its preload function
-//     for(let i=0; i < this.scenes.length; i++) {
-//       this.scenes[i].preload();
-//     }
-//   }
-//
-//   // Acts like the standard sketch draw function
-//   draw() {
-//     // Scene timer
-//     this.sceneTimer -= deltaTime;
-//    
-//     if(this.sceneTimer <= 0) {
-//       this.sceneTimer = this.duration;
-//       this.playNext();
-//       this.resetModes();
-//     }
-//    
-//     if(this.activeScene == null) {
-//      
-//     } else {
-//       if(!this.activeScene.startupExectued) {
-//         this.activeScene.setup();
-//       }
-//       this.activeScene.draw();
-//     }
-//    
-//     // Draw Transitions
-//     if(this.sceneTimer >= this.duration - this.transitionDuration || this.sceneTimer <= this.transitionDuration) {
-//       let transitionCompletion = 0;
-//       if(this.sceneTimer >= this.duration - this.transitionDuration) {
-//         // Opening transition in
-//         transitionCompletion = 1 - ((this.sceneTimer - (this.duration - this.transitionDuration)) / this.transitionDuration);
-//       } else {
-//         // Closing transition out
-//         transitionCompletion = this.sceneTimer / this.transitionDuration;
-//       }
-//      
-//       this.transition(transitionCompletion);
-//     }
-//   }
-//  
-//   // Plays the next enabled scene
-//   playNext() {
-//     // Get the scene index of the active scene
-//     let activeIndex = this.findSceneIndex(this.activeScene);
-//     this.activeScene.startupExectued = false;
-//    
-//     if(activeIndex == -1) {
-//       this.activeScene = null;
-//       console.log('Active Scene not found...');
-//       return null;
-//     }
-//    
-//     if(activeIndex >= this.scenes.length) {
-//       activeIndex = 0;
-//     } else {
-//       activeIndex++;
-//     }
-//    
-//     for(let i=activeIndex; i < this.scenes.length; i++) {
-//       // Find the first scene that is enabled
-//       if(this.scenes[i].enabled) {
-//         this.activeScene = this.scenes[i];
-//         this.activeScene.startupExectued = false;
-//         return i;
-//       }
-//     }
-//
-//     this.activeScene = null;
-//     console.log('Active Scene not selectable...');
-//     return null;
-//   }
-//  
-//   // Returns the index of the passed scene
-//   findSceneIndex(scene) {
-//     for(let i=0; i < this.scenes.length; i++) {
-//       if(this.scenes[i].name == scene.name) {
-//         return i;
-//       }
-//     }
-//     return -1;
-//   }
-//  
-//   // Draws a 'null' scene
-//   drawNull() {
-//     this.nullScene.draw();
-//   }
-//  
-//   // Draws the transition
-//   transition(completion) {
-//     let transitionColor = color(0,0,0);
-//     let transitionCompletion = mathUtil.clamp(easeUtil.easeOutQuad(completion), 0, 1);
-//
-//     transitionColor.setAlpha(transitionCompletion * 255);
-//    
-//     fill(transitionColor);
-//     noStroke();
-//    
-//     rect(0,0, width, height);
-//   }
-//  
-//   // Resets the P5JS modes to their defaults between scenes
-//   resetModes() {
-//     colorMode(RGB, 255); // Color Mode
-//   }
-// }
-//
-// class LobbyScene {
-//   constructor(name, options = new SceneOptions(), enabled = false) {
-//     this.name = name;
-//     this.options = options;
-//     this.enabled = enabled;
-//    
-//     // Runtime
-//     this.startupExectued = false;
-//   }
-//
-//   // Acts like the standard sketch preload function
-//   preload() {
-//    
-//   }
-//  
-//   // Acts like the standard sketch setup function
-//   setup() {
-//     this.startupExectued = true;
-//   }
-//  
-//   // Acts like the standard sketch draw function
-//   draw() {
-//    
-//   }
-// }
-//
-// // Options for a scene
-// class SceneOptions {
-//   constructor(enabled = false, values = [], selected = 0) {
-//     this.enabled = enabled;
-//     this.values = values;
-//     this.selected = selected;
-//   }
-//
-//   // Sets the selected option
-//   setSelected(value) {
-//     if(typeof value === 'number') {
-//       if(value <= this.values.length - 1) {
-//         this.selected = this.values[value];
-//       } else {
-//         this.selected = this.values[0];
-//       }
-//     } else {
-//       if(this.values.findIndex(value) !== -1) {
-//         this.selected = this.values[this.values.findIndex(value)];
-//       } else {
-//         this.selected = this.values[0];
-//       }
-//     }
-//   }
-// }
-//
-// // Draws a null grid
-// class NullScene extends LobbyScene {
-//   constructor() {
-//     super('NullScene', options = new SceneOptions());
-//
-//     this.spacing = 50;
-//     this.letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-//   }
-//
-//   // Acts like the standard sketch draw function
-//   draw() {
-//     background(255);
-//     let gridSize = createVector(ceil(width/this.spacing), ceil(height/this.spacing));
-//     for(let x=0; x < gridSize.x; x++) {
-//       for(let y=0; y < gridSize.y; y++) {
-//         let corner = createVector(x*this.spacing, y*this.spacing);
-//
-//         if(isEven(x + y)) {
-//           colorMode(RGB, 100);
-//           fill((x / gridSize.x) * 100, (y / gridSize.y) * 100, 100 - ((x+y*gridSize.x)/(gridSize.x * gridSize.y) * 100));
-//           noStroke();
-//
-//           rect(corner.x, corner.y, this.spacing, this.spacing);
-//
-//           let label = this.getCellLabel(x, y);
-//
-//           fill('white');
-//           textAlign(CENTER, CENTER);
-//
-//           text(label, corner.x, corner.y, this.spacing, this.spacing)
-//         }
-//       }
-//     }
-//   }
-//
-//   // Returns a cell label given an x and y
-//   getCellLabel(x, y) {
-//     return this.getCellLetter(x) + y.toString();
-//   }
-//
-//   // Returns a cell letter given an x
-//   getCellLetter(x) {
-//     let index = x % this.letters.length;
-//     let count = floor(x/this.letters.length) + 1;
-//
-//     return this.letters[index].repeat(count);
-//   }
-// }
+class SceneManager {
+  constructor(scenes = [], duration= 60, size = 800) {
+    this.scenes = scenes;
+    this.duration = duration;
+    this.size = createVector(size,size);
+
+    this.activeScene = null;
+    this.sceneTimer = duration;
+    this.transitionDuration = this.duration / 20; // A tenth of the total duration on either end of each scene
+
+    // Null Scene
+    this.nullScene = new NullScene();
+  }
+
+  // Acts like the standard sketch preload function
+  preload() {
+    // Iterate over each scene and run its preload function
+    for(let i=0; i < this.scenes.length; i++) {
+      this.scenes[i].preload();
+    }
+  }
+
+  // Acts like the standard sketch draw function
+  draw() {
+    // Scene timer
+    this.sceneTimer -= (deltaTime/1000);
+
+    if(this.sceneTimer <= 0) {
+      this.sceneTimer = this.duration;
+      this.playNext();
+      this.resetModes();
+    }
+
+    if(this.activeScene == null) {
+      this.drawNull();
+    } else {
+      if(!this.activeScene.startupExectued) {
+        this.activeScene.setup();
+      }
+      this.activeScene.draw();
+    }
+
+    // Draw Transitions
+    if(this.sceneTimer >= this.duration - this.transitionDuration || this.sceneTimer <= this.transitionDuration) {
+      let transitionCompletion = 0;
+      if(this.sceneTimer >= this.duration - this.transitionDuration) {
+        // Opening transition in
+        transitionCompletion = (this.sceneTimer - (this.duration - this.transitionDuration)) / this.transitionDuration;
+      } else {
+        // Closing transition out
+        transitionCompletion = 1 - (this.sceneTimer / this.transitionDuration);
+      }
+
+      this.transition(transitionCompletion);
+    }
+  }
+
+  // Plays the next enabled scene
+  playNext() {
+    // Get the scene index of the active scene
+    let activeIndex = this.findSceneIndex(this.activeScene);
+    if(this.activeScene !== null) {
+      this.activeScene.startupExectued = false;
+    }
+
+    if(activeIndex == -1) {
+      this.activeScene = null;
+      // console.log('Active Scene not found...');
+      return null;
+    }
+
+    if(activeIndex >= this.scenes.length) {
+      activeIndex = 0;
+    } else {
+      activeIndex++;
+    }
+
+    for(let i=activeIndex; i < this.scenes.length; i++) {
+      // Find the first scene that is enabled
+      if(this.scenes[i].enabled) {
+        this.activeScene = this.scenes[i];
+        this.activeScene.startupExectued = false;
+        return i;
+      }
+    }
+
+    this.activeScene = null;
+    console.log('Active Scene not selectable...');
+    return null;
+  }
+
+  // Returns the index of the passed scene
+  findSceneIndex(scene) {
+    for(let i=0; i < this.scenes.length; i++) {
+      if(this.scenes[i].name == scene.name) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  // Draws a 'null' scene
+  drawNull() {
+    this.nullScene.draw();
+  }
+
+  // Draws the transition
+  transition(completion) {
+    let transitionColor = color(0,0,0);
+    let transitionCompletion = mathUtil.clamp(easeUtil.easeOutQuad(completion), 0, 1);
+
+    transitionColor.setAlpha(transitionCompletion * 255);
+
+    fill(transitionColor);
+    noStroke();
+
+    rect(0,0, width, height);
+  }
+
+  // Resets the P5JS modes to their defaults between scenes
+  resetModes() {
+    colorMode(RGB, 255); // Color Mode
+  }
+}
+
+class LobbyScene {
+  constructor(name, options = new SceneOptions(), enabled = false) {
+    this.name = name;
+    this.options = options;
+    this.enabled = enabled;
+
+    // Runtime
+    this.startupExectued = false;
+  }
+
+  // Acts like the standard sketch preload function
+  preload() {
+
+  }
+
+  // Acts like the standard sketch setup function
+  setup() {
+    this.startupExectued = true;
+  }
+
+  // Acts like the standard sketch draw function
+  draw() {
+
+  }
+}
+
+// Options for a scene
+class SceneOptions {
+  constructor(enabled = false, values = [], selected = 0) {
+    this.enabled = enabled;
+    this.values = values;
+    this.selected = selected;
+  }
+
+  // Sets the selected option
+  setSelected(value) {
+    if(typeof value === 'number') {
+      if(value <= this.values.length - 1) {
+        this.selected = this.values[value];
+      } else {
+        this.selected = this.values[0];
+      }
+    } else {
+      if(this.values.findIndex(value) !== -1) {
+        this.selected = this.values[this.values.findIndex(value)];
+      } else {
+        this.selected = this.values[0];
+      }
+    }
+  }
+}
+
+// Draws a null grid
+class NullScene extends LobbyScene {
+  constructor() {
+    super('NullScene', new SceneOptions());
+
+    this.spacing = 50;
+    this.letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+  }
+
+  // Acts like the standard sketch draw function
+  draw() {
+    background(255);
+    let gridSize = createVector(ceil(width/this.spacing), ceil(height/this.spacing));
+    for(let x=0; x < gridSize.x; x++) {
+      for(let y=0; y < gridSize.y; y++) {
+        let corner = createVector(x*this.spacing, y*this.spacing);
+
+        if(mathUtil.isEven(x + y)) {
+          colorMode(RGB, 100);
+          fill((x / gridSize.x) * 100, (y / gridSize.y) * 100, 100 - ((x+y*gridSize.x)/(gridSize.x * gridSize.y) * 100));
+          noStroke();
+
+          rect(corner.x, corner.y, this.spacing, this.spacing);
+
+          let label = this.getCellLabel(x, y);
+
+          fill('white');
+          textAlign(CENTER, CENTER);
+
+          text(label, corner.x, corner.y, this.spacing, this.spacing)
+        }
+      }
+    }
+  }
+
+  // Returns a cell label given an x and y
+  getCellLabel(x, y) {
+    return this.getCellLetter(x) + y.toString();
+  }
+
+  // Returns a cell letter given an x
+  getCellLetter(x) {
+    let index = x % this.letters.length;
+    let count = floor(x/this.letters.length) + 1;
+
+    return this.letters[index].repeat(count);
+  }
+}
