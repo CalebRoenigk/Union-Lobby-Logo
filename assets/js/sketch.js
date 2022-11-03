@@ -1,11 +1,15 @@
 // P5JS Launch Points
 function preload() {
-  console.log("preloading");
   startup();
 }
 
 function setup() {
-  console.log("setup");
+  // Force the canvas to be the scene size
+  pixelDensity(1);
+  
+  // Create the canvas
+  createCanvas(800,800);
+  
   // Create the scene manager
   sceneManager = new SceneManager();
   
@@ -14,9 +18,6 @@ function setup() {
   
   // Run the scene manager preload operation
   sceneManager.preload();
-  
-  // Create the canvas
-  createCanvas(400,400);
 
   // Load Settings
   loadSettings();
@@ -221,17 +222,16 @@ let mathUtil = new MathUtil();
 let easeUtil = new EaseUtil();
 let sceneManager;
 
-// // TODO: Reimplement scene manager and p5js
 // // TODO: Scene manager should submit a scene list when it runs the start function
 // // TODO: Scene manager should constantly update the scene timeline
 // // TODO: Scene manager to update scene duration every time it switches scenes
 // // TODO: Scene manager to update the play queue every time it switches scenes
 // // TODO: Scene list should include scene function name as well, and the option should be passed in as an arg of that function ex: logo('union)
 // // TODO: Add ability to mask the scene to the U
-//
-//
-//
-//
+// // TODO: Add the ability to save the mask setup to the editor settings
+
+
+
 // Startup function
 function startup() {
   // Set up editor toggle
@@ -538,6 +538,26 @@ function loadSettings() {
   editorSettings = settings;
 }
 
+// Mask Editor Dragging dectections
+function mousePressed() {
+  if(editorState) {
+    sceneManager.maskEditor.checkDrag();
+  }
+}
+
+function mouseDragged() {
+  if(editorState) {
+    sceneManager.maskEditor.drag();
+  }
+}
+
+function mouseReleased() {
+  if(editorState) {
+    sceneManager.maskEditor.drop();
+  }
+}
+
+
 class SceneManager {
   constructor(scenes = [], duration= 60, size = 800) {
     this.scenes = scenes;
@@ -550,6 +570,10 @@ class SceneManager {
 
     // Null Scene
     this.nullScene = new NullScene();
+    
+    // Mask Editor
+    let mask1 = new Mask()
+    this.maskEditor = new MaskEditor([new Mask([new MaskVertex(createVector(100,50)), new MaskCurve(createVector(100,150), createVector(100,200), createVector(125,200), createVector(200,200)), new MaskVertex(createVector(200,50))], createVector(0,0), createVector(width/2, height)), new Mask([new MaskVertex(createVector(300,50)), new MaskVertex(createVector(300,150)), new MaskVertex(createVector(400,150)), new MaskVertex(createVector(400,50))], createVector(width/2,0), createVector(width/2, height))]);
   }
 
   // Acts like the standard sketch preload function
@@ -593,6 +617,9 @@ class SceneManager {
 
       this.transition(transitionCompletion);
     }
+
+    // Draw the mask
+    this.maskEditor.draw();
   }
 
   // Plays the next enabled scene
@@ -712,6 +739,255 @@ class SceneOptions {
         this.selected = this.values[0];
       }
     }
+  }
+}
+
+// The mask render that renders the U Cutout of black
+class MaskEditor {
+  constructor(masks) {
+    this.masks = masks;
+  }
+
+  // Draws the masks
+  draw() {
+    this.masks.forEach(mask => {
+      mask.draw();
+    })
+    
+    // Draw the handles if the editor is open
+    if(editorState) {
+      this.drawHandles();
+    }
+  }
+  
+  // Draws the mask points for editing
+  drawHandles() {
+    this.masks.forEach(mask => {
+      mask.drawHandles();
+    })
+  }
+
+  // Checks if any mask point can be dragged
+  checkDrag() {
+    this.masks.forEach(mask => {
+      mask.checkDrag();
+    })
+  }
+
+  // Attempts to drag any of the mask points
+  drag() {
+    this.masks.forEach(mask => {
+      mask.drag();
+    })
+  }
+  
+  // Drops all mask points
+  drop() {
+    this.masks.forEach(mask => {
+      mask.drop();
+    })
+  }
+}
+
+// A mask used to cut out of a black background
+class Mask {
+  constructor(points, position, size) {
+    this.points = points;
+    this.position = position;
+    this.size = size;
+  }
+  
+  draw() {
+    // Fill the mask with the mask color
+    noStroke();
+    fill(color('red'));
+
+    // Create the base mask shape
+    beginShape();
+    vertex(this.position.x, this.position.y);
+    vertex(this.position.x + this.size.x, this.position.y);
+    vertex(this.position.x + this.size.x, this.position.y + this.size.y);
+    vertex(this.position.x, this.position.y + this.size.y);
+
+    // Iterate over the cutout points
+    beginContour();
+    for (let p = 0; p < this.points.length; p++) {
+      let maskPoint = this.points[p];
+      if (maskPoint.constructor.name === 'MaskVertex') {
+        vertex(maskPoint.position.x, maskPoint.position.y);
+      } else {
+        vertex(maskPoint.start.x, maskPoint.start.y);
+        bezierVertex(maskPoint.startControl.x, maskPoint.startControl.y, maskPoint.endControl.x, maskPoint.endControl.y, maskPoint.end.x, maskPoint.end.y);
+      }
+    }
+    endContour();
+    
+    endShape();
+  }
+
+  drawHandles() {
+    for(let i=0; i < this.points.length; i++) {
+      this.points[i].draw();
+    }
+  }
+  
+  // Checks if any points can be dragged
+  checkDrag() {
+    for(let i=0; i < this.points.length; i++) {
+      if(this.points[i].mouseInRange()) {
+        this.points[i].setDrag(true);
+        return;
+      }
+    }
+  }
+  
+  // Attempts to drag any of the mask points
+  drag() {
+    for(let i=0; i < this.points.length; i++) {
+      this.points[i].drag();
+    }
+  }
+  
+  // Drops any dragging points
+  drop() {
+    for(let i=0; i < this.points.length; i++) {
+      this.points[i].setDrag(false);
+    }
+  }
+}
+
+// A point in a cutout mask
+class MaskPoint {
+  constructor(position) {
+    this.position = position;
+    
+    this.size = 12;
+    this.strokeColor = 'magenta';
+    this.isDragging = false;
+  }
+  
+  draw() {
+    noFill();
+    stroke(this.strokeColor);
+    strokeWeight(this.size);
+    
+    point(this.position.x, this.position.y);
+  }
+  
+  drag() {
+    if(this.isDragging) {
+      // The mouse is within the dragging area
+      this.position = createVector(mouseX, mouseY);
+    } else {
+      return null;
+    }
+  }
+  
+  mouseInRange() {
+    let mousePosition = createVector(mouseX, mouseY);
+    return p5.Vector.dist(mousePosition, this.position) <= this.size;
+  }
+  
+  // Sets the dragging state
+  setDrag(state) {
+    this.isDragging = state;
+  }
+}
+
+// Flat Vertex mask point
+class MaskVertex extends MaskPoint {
+  constructor(position) {
+    super(position);
+  }
+  
+  draw() {
+    super.draw();
+  }
+}
+
+// Bezier curve mask section
+class MaskCurve extends MaskPoint {
+  constructor(start, startControl, endControl, end) {
+    super(start);
+    this.start = start;
+    this.startControl = startControl;
+    this.endControl = endControl;
+    this.end = end;
+    
+    this.draggingIndex = -1;
+  }
+  
+  draw() {
+    // Draw the handle lines
+    noFill();
+    stroke('yellow');
+    strokeWeight(2);
+    
+    line(this.start.x, this.start.y, this.startControl.x, this.startControl.y);
+    line(this.end.x, this.end.y, this.endControl.x, this.endControl.y);
+
+    // Draw the four points
+    noFill();
+    stroke(this.strokeColor);
+    strokeWeight(this.size);
+    
+    point(this.start.x, this.start.y);
+    point(this.startControl.x, this.startControl.y);
+    point(this.endControl.x, this.endControl.y);
+    point(this.end.x, this.end.y);
+  }
+
+  drag() {
+    if(this.draggingIndex !== -1) {
+      let mousePosition = createVector(mouseX, mouseY);
+      // The mouse is within the dragging area for one of the point handles
+      switch(this.draggingIndex) {
+        case 0:
+          // Start
+          this.start = mousePosition;
+          break;
+        case 1:
+          // Start Control
+          this.startControl = mousePosition;
+          break;
+        case 2:
+          // End Control
+          this.endControl = mousePosition;
+          break;
+        case 3:
+          // End
+          this.end = mousePosition;
+          break;
+        default:
+          break;
+      }
+      this.position = createVector(mouseX, mouseY);
+    } else {
+      return null;
+    }
+  }
+
+  // Tests if any of the points are in the mouse range
+  mouseInRange() {
+    let mousePosition = createVector(mouseX, mouseY);
+    let pointArray = [this.start, this.startControl, this.endControl, this.end];
+    
+    for(let i=0; i < pointArray.length; i++) {
+      let pointPosition = pointArray[i];
+      
+      if(p5.Vector.dist(mousePosition, pointPosition) <= this.size) {
+        this.draggingIndex = i;
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  // Sets the dragging state
+  setDrag(state) {
+    super.setDrag(state);
+    this.draggingIndex = state?this.draggingIndex:-1;
   }
 }
 

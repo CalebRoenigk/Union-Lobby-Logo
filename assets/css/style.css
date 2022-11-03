@@ -226,6 +226,8 @@ canvas {
   position: absolute;
   top: var(--top);
   left: var(--left);
+  max-width: 100%;
+  max-height: 100%;
 }
 
 #editor-playlist-container {
