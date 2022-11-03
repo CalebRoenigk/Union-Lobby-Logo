@@ -2,6 +2,8 @@
 sceneList = [{name: 'Logo', options: {enabled: true, values: ['Union', 'NRG', 'NGC','Diversey']}}, {name: 'Water', options: {enabled: false, values: []}}, {name: 'Air', options: {enabled: false, values: []}}, {name: 'Life', options: {enabled: false, values: []}}];
 editorSettings = {};
 editorState = false;
+const mathUtil = new MathUtilities();
+const easeUtil = new EasingUtilities();
 
 // TODO: Reimplement scene manager and p5js
 // TODO: Scene manager should submit a scene list when it runs the start function
@@ -321,11 +323,129 @@ function loadSettings() {
 
 startup();
 
+class SceneManager {
+  constructor(scenes = [], duration= 60) {
+    this.scenes = scenes;
+    this.duration = duration;
+    
+    this.activeScene = scenes[0];
+    this.sceneTimer = duration;
+    this.transitionDuration = this.duration / 20; // A tenth of the total duration on either end of each scene
+    
+    // Null Scene
+    this.nullScene = new NullScene();
+  }
+
+  // Acts like the standard sketch preload function
+  preload() {
+    // Iterate over each scene and run its preload function
+    for(let i=0; i < this.scenes.length; i++) {
+      this.scenes[i].preload();
+    }
+  }
+
+  // Acts like the standard sketch draw function
+  draw() {
+    // Scene timer
+    this.sceneTimer -= deltaTime;
+    
+    if(this.sceneTimer <= 0) {
+      this.sceneTimer = this.duration;
+      this.playNext();
+      this.resetModes();
+    }
+    
+    if(this.activeScene == null) {
+      
+    } else {
+      if(!this.activeScene.startupExectued) {
+        this.activeScene.setup();
+      }
+      this.activeScene.draw();
+    }
+    
+    // Draw Transitions
+    if(this.sceneTimer >= this.duration - this.transitionDuration || this.sceneTimer <= this.transitionDuration) {
+      let transitionCompletion = 0;
+      if(this.sceneTimer >= this.duration - this.transitionDuration) {
+        // Opening transition in
+        transitionCompletion = 1 - ((this.sceneTimer - (this.duration - this.transitionDuration)) / this.transitionDuration);
+      } else {
+        // Closing transition out
+        transitionCompletion = this.sceneTimer / this.transitionDuration;
+      }
+      
+      this.transition(transitionCompletion);
+    }
+  }
+  
+  // Plays the next enabled scene
+  playNext() {
+    // Get the scene index of the active scene
+    let activeIndex = this.findSceneIndex(this.activeScene);
+    this.activeScene.startupExectued = false;
+    
+    if(activeIndex == -1) {
+      this.activeScene = null;
+      console.log('Active Scene not found...');
+      return null;
+    }
+    
+    if(activeIndex >= this.scenes.length) {
+      activeIndex = 0;
+    } else {
+      activeIndex++;
+    }
+    
+    for(let i=activeIndex; i < this.scenes.length; i++) {
+      // Find the first scene that is enabled
+      if(this.scenes[i].enabled) {
+        this.activeScene = this.scenes[i];
+        this.activeScene.startupExectued = false;
+        return i;
+      }
+    }
+
+    this.activeScene = null;
+    console.log('Active Scene not selectable...');
+    return null;
+  }
+  
+  // Returns the index of the passed scene
+  findSceneIndex(scene) {
+    for(let i=0; i < this.scenes.length; i++) {
+      if(this.scenes[i].name == scene.name) {
+        return i;
+      }
+    }
+    
+    return -1;
+  }
+  
+  // Draws a 'null' scene
+  drawNull() {
+    this.nullScene.draw();
+  }
+  
+  // Draws the transition
+  transition(completion) {
+    let transitionColor = 
+  }
+  
+  // Resets the P5JS modes to their defaults between scenes
+  resetModes() {
+    colorMode(RGB, 255); // Color Mode
+  }
+}
+
 class LobbyScene {
   constructor(name, options = new SceneOptions(), enabled = false) {
     this.name = name;
     this.options = options;
     this.enabled = enabled;
+    
+    // Runtime
+    this.startupExectued = false;
   }
 
   // Acts like the standard sketch preload function
@@ -335,12 +455,61 @@ class LobbyScene {
   
   // Acts like the standard sketch setup function
   setup() {
-    
+    this.startupExectued = true;
   }
   
   // Acts like the standard sketch draw function
   draw() {
     
+  }
+}
+
+// Draws a null grid
+class NullScene extends LobbyScene {
+  constructor() {
+    super('NullScene', options = new SceneOptions());
+
+    this.spacing = 50;
+    this.letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+  }
+
+  // Acts like the standard sketch draw function
+  draw() {
+    background(255);
+    let gridSize = createVector(ceil(width/this.spacing), ceil(height/this.spacing));
+    for(let x=0; x < gridSize.x; x++) {
+      for(let y=0; y < gridSize.y; y++) {
+        let corner = createVector(x*this.spacing, y*this.spacing);
+
+        if(isEven(x + y)) {
+          colorMode(RGB, 100);
+          fill((x / gridSize.x) * 100, (y / gridSize.y) * 100, 100 - ((x+y*gridSize.x)/(gridSize.x * gridSize.y) * 100));
+          noStroke();
+
+          rect(corner.x, corner.y, this.spacing, this.spacing);
+
+          let label = this.getCellLabel(x, y);
+
+          fill('white');
+          textAlign(CENTER, CENTER);
+
+          text(label, corner.x, corner.y, this.spacing, this.spacing)
+        }
+      }
+    }
+  }
+
+  // Returns a cell label given an x and y
+  getCellLabel(x, y) {
+    return this.getCellLetter(x) + y.toString();
+  }
+
+  // Returns a cell letter given an x
+  getCellLetter(x) {
+    let index = x % this.letters.length;
+    let count = floor(x/this.letters.length) + 1;
+
+    return this.letters[index].repeat(count);
   }
 }
 
@@ -366,5 +535,181 @@ class SceneOptions {
         this.selected = this.values[0];
       }
     }
+  }
+}
+
+// Math Utilities
+class MathUtilities {
+  constructor() {}
+  
+  // Is the value even
+  isEven(value) {
+    return value % 2 === 0;
+  }
+}
+
+// Easing Utilities
+class EasingUtilities {
+  constructor() {}
+  
+  // Sine
+  easeInSine(x) {
+    return 1 - Math.cos((x * PI) / 2);
+  }
+  easeOutSine(x) {
+    return Math.sin((x * PI) / 2);
+  }
+  easeInOutSine(x) {
+    return -(Math.cos(PI * x) - 1) / 2;
+  }
+  
+  // Quad
+  easeInQuad(x) {
+    return x * x;
+  }
+  easeOutQuad(x) {
+    return 1 - (1 - x) * (1 - x);
+  }
+  easeInOutQuad(x) {
+    return x < 0.5 ? 2 * x * x : 1 - pow(-2 * x + 2, 2) / 2;
+  }
+
+  // Cubic
+  easeInCubic(x) {
+    return x * x * x;
+  }
+  easeOutCubic(x) {
+    return 1 - pow(1 - x, 3);
+  }
+  easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2;
+  }
+
+  // Quart
+  easeInQuart(x) {
+    return x * x * x * x;
+  }
+  easeOutQuart(x) {
+    return 1 - pow(1 - x, 4);
+  }
+  easeInOutQuart(x) {
+    return x < 0.5 ? 8 * x * x * x * x : 1 - pow(-2 * x + 2, 4) / 2;
+  }
+
+  // Quint
+  easeInQuint(x) {
+    return x * x * x * x * x;
+  }
+  easeOutQuint(x) {
+    return 1 - pow(1 - x, 5);
+  }
+  easeInOutQuint(x) {
+    return x < 0.5 ? 16 * x * x * x * x * x : 1 - pow(-2 * x + 2, 5) / 2;
+  }
+
+  // Expo
+  easeInExpo(x) {
+    return x === 0 ? 0 : pow(2, 10 * x - 10);
+  }
+  easeOutExpo(x) {
+    return x === 1 ? 1 : 1 - pow(2, -10 * x);
+  }
+  easeInOutExpo(x) {
+    return x === 0
+        ? 0
+        : x === 1
+            ? 1
+            : x < 0.5 ? pow(2, 20 * x - 10) / 2
+                : (2 - pow(2, -20 * x + 10)) / 2;
+  }
+
+  // Circ
+  easeInCirc(x) {
+    return 1 - sqrt(1 - pow(x, 2));
+  }
+  easeOutCirc(x) {
+    return sqrt(1 - pow(x - 1, 2));
+  }
+  easeInOutCirc(x) {
+    return x < 0.5
+        ? (1 - sqrt(1 - pow(2 * x, 2))) / 2
+        : (sqrt(1 - pow(-2 * x + 2, 2)) + 1) / 2;
+  }
+
+  // Back
+  easeInBack(x) {
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+
+    return c3 * x * x * x - c1 * x * x;
+  }
+  easeOutBack(x) {
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+
+    return 1 + c3 * pow(x - 1, 3) + c1 * pow(x - 1, 2);
+  }
+  easeInOutBack(x) {
+    const c1 = 1.70158;
+    const c2 = c1 * 1.525;
+
+    return x < 0.5
+        ? (pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
+        : (pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2;
+  }
+
+  // Elastic
+  easeInElastic(x) {
+    const c4 = (2 * PI) / 3;
+
+    return x === 0
+        ? 0
+        : x === 1
+            ? 1
+            : -pow(2, 10 * x - 10) * Math.sin((x * 10 - 10.75) * c4);
+  }
+  easeOutElastic(x) {
+    const c4 = (2 * PI) / 3;
+
+    return x === 0
+        ? 0
+        : x === 1
+            ? 1
+            : pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * c4) + 1;
+  }
+  easeInOutElastic(x) {
+    const c5 = (2 * PI) / 4.5;
+
+    return x === 0
+        ? 0
+        : x === 1
+            ? 1
+            : x < 0.5
+                ? -(pow(2, 20 * x - 10) * Math.sin((20 * x - 11.125) * c5)) / 2
+                : (pow(2, -20 * x + 10) * Math.sin((20 * x - 11.125) * c5)) / 2 + 1;
+  }
+
+  // Bounce
+  easeInBounce(x) {
+    return 1 - this.easeOutBounce(1 - x);
+  }
+  easeOutBounce(x) {
+    const n1 = 7.5625;
+    const d1 = 2.75;
+
+    if (x < 1 / d1) {
+      return n1 * x * x;
+    } else if (x < 2 / d1) {
+      return n1 * (x -= 1.5 / d1) * x + 0.75;
+    } else if (x < 2.5 / d1) {
+      return n1 * (x -= 2.25 / d1) * x + 0.9375;
+    } else {
+      return n1 * (x -= 2.625 / d1) * x + 0.984375;
+    }
+  }
+  easeInOutBounce(x) {
+    return x < 0.5
+        ? (1 - this.easeOutBounce(1 - 2 * x)) / 2
+        : (1 + this.easeOutBounce(2 * x - 1)) / 2;
   }
 }
