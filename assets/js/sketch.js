@@ -14,7 +14,7 @@ function setup() {
   sceneManager = new SceneManager();
   
   // TODO: ADD SCENES TO THE SCENE MANAGER
-  // sceneManager.scenes.push();
+  sceneManager.scenes.push(new LogoScene());
   
   // Run the scene manager preload operation
   sceneManager.preload();
@@ -688,6 +688,7 @@ class SceneManager {
   // Resets the P5JS modes to their defaults between scenes
   resetModes() {
     colorMode(RGB, 255); // Color Mode
+    imageMode(CORNER); // Image Draw Mode
   }
 }
 
@@ -808,7 +809,7 @@ class Mask {
   draw() {
     // Fill the mask with the mask color
     noStroke();
-    fill(color('red'));
+    fill(color('black'));
 
     // Create the base mask shape
     beginShape();
@@ -1045,5 +1046,72 @@ class NullScene extends LobbyScene {
     let count = floor(x/this.letters.length) + 1;
 
     return this.letters[index].repeat(count);
+  }
+}
+
+// SCENES
+
+// Logo Scene
+// TODO: Make the scene work with args
+class LogoScene extends LobbyScene {
+  constructor() {
+    super('LogoScene', new SceneOptions(false, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
+    
+    this.logos = [];
+    this.amount = 5;
+    this.animationLength = 3.5;
+    this.animationGap = 0.5;
+  }
+  
+  preload() {
+    let logos = [];
+    this.logos.forEach(logo => {
+      let img = loadImage('assets/' + logo + '.png');
+      logos.push(img);
+    });
+    
+    this.logos = logos;
+  }
+  
+  draw() {
+    background('black');
+    let spacing = width/this.amount;
+    // master timer loop to duration
+    let masterTimer = ((millis() / 1000) % this.animationLength)/this.animationLength;
+    // console.log(masterTimer);
+    let gapDuration = this.animationGap / this.animationLength;
+
+    let xOffset = 0;
+    let yOffset = 0;
+
+    let transitionDuration = 0.5 - (gapDuration/2);
+    let alterRows = false;
+
+    // When the timer is less than 0.5 - gapDuration/2 > offset the X 
+    if(masterTimer <= (0.5 - (gapDuration/2))) {
+      // Offset X
+      xOffset = easeUtil.easeInOutCubic(masterTimer / transitionDuration) * -spacing;
+      alterRows = true;
+    } else if(masterTimer <= (0.5 + (gapDuration/2))) {
+      // No Movement
+      // Do Nothing
+    } else {
+      // Offset Y
+      yOffset = easeUtil.easeInOutCubic((masterTimer - (transitionDuration + gapDuration)) / transitionDuration) * -spacing;
+    }
+
+    for(let x = 0; x < count+2; x++) {
+      for(let y = 0; y < count+2; y++) {
+        let pos = createVector(x * spacing, y * spacing);
+        if(alterRows && isEven(y) || !alterRows && isEven(x)) {
+          pos = createVector(x * spacing + xOffset, y * spacing + yOffset);
+        }
+
+        point(pos.x, pos.y);
+        imageMode(CENTER);
+        // TODO: Make sure selected returns the proper index and not a string
+        image(this.logos[this.options.selected], pos.x, pos.y, spacing/2, spacing/2);
+      }
+    }
   }
 }
