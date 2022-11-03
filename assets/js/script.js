@@ -12,6 +12,7 @@ let sceneManager;
 // TODO: Scene manager to update scene duration every time it switches scenes
 // TODO: Scene manager to update the play queue every time it switches scenes
 // TODO: Scene list should include scene function name as well, and the option should be passed in as an arg of that function ex: logo('union)
+// TODO: Add ability to mask the scene to the U
 
 // P5JS Launch Points
 function preload() {
