@@ -440,6 +440,7 @@ function saveSettings() {
   let sceneDuration = Number(document.getElementById('editor-scenetime').value);
   let playlistItems = getPlaylistSettings();
   let canvasPosition = [Number(document.getElementById('editor-canvas-x').value), Number(document.getElementById('editor-canvas-y').value)];
+  let maskSettings = sceneManager.maskEditor.getMaskSettings();
 
   // Validate data
   if(typeof sceneDuration !== 'number' || sceneDuration <= 0) {
@@ -450,7 +451,7 @@ function saveSettings() {
   document.getElementById('editor-canvas-y').value = canvasPosition[1];
 
 
-  let settings = {sceneDuration: sceneDuration, playlistItems: playlistItems, canvasPosition: canvasPosition};
+  let settings = {sceneDuration: sceneDuration, playlistItems: playlistItems, canvasPosition: canvasPosition, maskSettings: maskSettings};
   editorSettings = settings;
   let value = JSON.stringify(settings);
 
@@ -786,6 +787,13 @@ class MaskEditor {
     this.masks.forEach(mask => {
       mask.drop();
     })
+  }
+  
+  // TODO: MAKE A MASK SERIALIZER FOR SAVING TO THE SETTINGS, MAKE THIS SAVE AND UPDATE CALL AFTER EVERY DROP OF THE MOUSE AFTER DRAGGING
+  // Returns the mask settings for all masks
+  getMaskSettings() {
+    // {masks: [{points: [{type: 'V', position: (x,y)}, {type: 'C', start: (x,y), startControl: (x,y), endControl: (x,y), end: (x,y)}], position: (x,y), size: (x,y)}]}
+    
   }
 }
 
