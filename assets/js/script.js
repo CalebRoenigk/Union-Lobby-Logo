@@ -418,7 +418,6 @@ class SceneManager {
         return i;
       }
     }
-    
     return -1;
   }
   
@@ -429,7 +428,15 @@ class SceneManager {
   
   // Draws the transition
   transition(completion) {
-    let transitionColor = 
+    let transitionColor = color(0,0,0);
+    let transitionCompletion = mathUtil.clamp(easeUtil.easeOutQuad(completion), 0, 1);
+
+    transitionColor.setAlpha(transitionCompletion * 255);
+    
+    fill(transitionColor);
+    noStroke();
+    
+    rect(0,0, width, height);
   }
   
   // Resets the P5JS modes to their defaults between scenes
@@ -461,6 +468,32 @@ class LobbyScene {
   // Acts like the standard sketch draw function
   draw() {
     
+  }
+}
+
+// Options for a scene
+class SceneOptions {
+  constructor(enabled = false, values = [], selected = 0) {
+    this.enabled = enabled;
+    this.values = values;
+    this.selected = selected;
+  }
+
+  // Sets the selected option
+  setSelected(value) {
+    if(typeof value === 'number') {
+      if(value <= this.values.length - 1) {
+        this.selected = this.values[value];
+      } else {
+        this.selected = this.values[0];
+      }
+    } else {
+      if(this.values.findIndex(value) !== -1) {
+        this.selected = this.values[this.values.findIndex(value)];
+      } else {
+        this.selected = this.values[0];
+      }
+    }
   }
 }
 
@@ -513,31 +546,6 @@ class NullScene extends LobbyScene {
   }
 }
 
-class SceneOptions {
-  constructor(enabled = false, values = [], selected = 0) {
-    this.enabled = enabled;
-    this.values = values;
-    this.selected = selected;
-  }
-  
-  // Sets the selected option
-  setSelected(value) {
-    if(typeof value === 'number') {
-      if(value <= this.values.length - 1) {
-        this.selected = this.values[value];
-      } else {
-        this.selected = this.values[0];
-      }
-    } else {
-      if(this.values.findIndex(value) !== -1) {
-        this.selected = this.values[this.values.findIndex(value)];
-      } else {
-        this.selected = this.values[0];
-      }
-    }
-  }
-}
-
 // Math Utilities
 class MathUtilities {
   constructor() {}
@@ -545,6 +553,16 @@ class MathUtilities {
   // Is the value even
   isEven(value) {
     return value % 2 === 0;
+  }
+
+  // Is the value odd
+  isOdd(value) {
+    return !isEven(value);
+  }
+  
+  // Clamp the value within a min and max range
+  clamp(value, min, max) {
+    return min(max(value,min), max);
   }
 }
 

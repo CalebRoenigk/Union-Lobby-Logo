@@ -1,54 +1,52 @@
 <!DOCTYPE html>
 <html lang="en" >
-<head>
-  <meta charset="UTF-8">
-  <title>CodePen - P5JS Lobby Editor</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;400;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="./style.css">
-
-</head>
-<body>
-<!-- partial:index.partial.html -->
-<div id="canvas-position-marker" style="--top: 200px; --left: 200px;"></div>
-<div id="editor-panel">
-  <div id="editor-actions">
-    <div id="editor-header" class="editor-block">
-    <h1>Strings</h1>
-    <div id="editor-playback-timeline" style="--playback-scale: 32%;"></div>
-    <div id="editor-scenetime-selector" class="editor-selector">
-      <label for="editor-scenetime">Scene Duration: </label><input type="number" id="editor-scenetime" value="60">
+  <head>
+    <meta charset="UTF-8">
+    <title>CodePen - P5JS Lobby Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/style.css">
+  </head>
+  <body>
+    <div id="canvas-position-marker" style="--top: 200px; --left: 200px;"></div>
+    <div id="editor-panel">
+      <div id="editor-actions">
+        <div id="editor-header" class="editor-block">
+        <h1>Strings</h1>
+        <div id="editor-playback-timeline" style="--playback-scale: 32%;"></div>
+        <div id="editor-scenetime-selector" class="editor-selector">
+          <label for="editor-scenetime">Scene Duration: </label><input type="number" id="editor-scenetime" value="60">
+        </div>
+      </div>
+      <div id="editor-playlist" class="editor-block">
+        <div id="editor-playlist-container">
+          <ul id="editor-playlist-list">
+          </ul>
+        </div>
+      </div>
+      <div id="editor-refresh" class="editor-block">
+        <h4>Next page reload in <span id="editor-reload-timer" class="text-bold">--hrs --mins</span> or you can force a refresh right now with the button below.</h4>
+        <input type="button" value="Force Refresh" class="button" onclick="forceReload()"></input>
+      </div>
+      <div id="editor-canvas" class="editor-block">
+        <h2>Canvas Position:</h2>
+        <div class="editor-selector">
+          <div id="editor-canvas-selector-x" class="editor-selector">
+          <label for="editor-canvas-x">X:</label><input type="number" id="editor-canvas-x" value="200" oninput="updateCanvasPositionMarker()">
+        </div>
+          <div id="editor-canvas-selector-y" class="editor-selector">
+          <label for="editor-canvas-y">Y:</label><input type="number" id="editor-canvas-y" value="200" oninput="updateCanvasPositionMarker()">
+        </div>
+        </div>
+      </div>
+      </div>
+      <div id="editor-prompt" class="editor-block">
+        <h3>It's currently <span id="editor-clock">--:--am</span></h3>
+        <h4>Toggle Edit Mode at any time by pressing <span class="text-bold">~</span> (Tilda)</h4>
+      </div>
     </div>
-  </div>
-  <div id="editor-playlist" class="editor-block">
-    <div id="editor-playlist-container">
-      <ul id="editor-playlist-list">
-      </ul>
-    </div>
-  </div>
-  <div id="editor-refresh" class="editor-block">
-    <h4>Next page reload in <span id="editor-reload-timer" class="text-bold">--hrs --mins</span> or you can force a refresh right now with the button below.</h4>
-    <input type="button" value="Force Refresh" class="button" onclick="forceReload()"></input>
-  </div>
-  <div id="editor-canvas" class="editor-block">
-    <h2>Canvas Position:</h2>
-    <div class="editor-selector">
-      <div id="editor-canvas-selector-x" class="editor-selector">
-      <label for="editor-canvas-x">X:</label><input type="number" id="editor-canvas-x" value="200" oninput="updateCanvasPositionMarker()">
-    </div>
-      <div id="editor-canvas-selector-y" class="editor-selector">
-      <label for="editor-canvas-y">Y:</label><input type="number" id="editor-canvas-y" value="200" oninput="updateCanvasPositionMarker()">
-    </div>
-    </div>
-  </div>
-  </div>
-  <div id="editor-prompt" class="editor-block">
-    <h3>It's currently <span id="editor-clock">--:--am</span></h3>
-    <h4>Toggle Edit Mode at any time by pressing <span class="text-bold">~</span> (Tilda)
-  </div>
-</div>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.5.0/lib/p5.min.js"></script>
-  <script  src="./script.js"></script>
-
-</body>
+    <script src=".assets/js/p5.js"></script>
+    <script src="./script.js"></script>
+  </body>
 </html>
