@@ -4,6 +4,7 @@ editorSettings = {};
 editorState = false;
 const mathUtil = new MathUtilities();
 const easeUtil = new EasingUtilities();
+let sceneManager;
 
 // TODO: Reimplement scene manager and p5js
 // TODO: Scene manager should submit a scene list when it runs the start function
@@ -11,6 +12,29 @@ const easeUtil = new EasingUtilities();
 // TODO: Scene manager to update scene duration every time it switches scenes
 // TODO: Scene manager to update the play queue every time it switches scenes
 // TODO: Scene list should include scene function name as well, and the option should be passed in as an arg of that function ex: logo('union)
+
+// P5JS Launch Points
+function preload() {
+  
+}
+
+function setup() {
+  // Create the scene manager
+  sceneManager = new SceneManager();
+  
+  // TODO: ADD SCENES TO THE SCENE MANAGER
+  // sceneManager.scenes.push();
+  
+  // Run the scene manager preload operation
+  sceneManager.preload();
+  
+  // Create the canvas
+  createCanvas(sceneManager.size.x, sceneManager.size.y);
+}
+
+function draw() {
+  sceneManager.draw();
+}
 
 // Startup function
 function startup() {
@@ -324,9 +348,10 @@ function loadSettings() {
 startup();
 
 class SceneManager {
-  constructor(scenes = [], duration= 60) {
+  constructor(scenes = [], duration= 60, size = 800) {
     this.scenes = scenes;
     this.duration = duration;
+    this.size = createVector(size,size);
     
     this.activeScene = scenes[0];
     this.sceneTimer = duration;
