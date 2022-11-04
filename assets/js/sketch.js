@@ -761,6 +761,7 @@ class SceneOptions {
         this.selected = this.values[0];
       }
     } else {
+      console.log(value);
       if(this.values.findIndex(value) !== -1) {
         this.selected = this.values.findIndex(value);
       } else {
