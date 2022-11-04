@@ -742,6 +742,15 @@ class SceneOptions {
       }
     }
   }
+  
+  // Returns the selected scene's index
+  getSelectedIndex() {
+    if(typeof this.selected === 'number') {
+      return this.selected;
+    }
+
+    return this.values.findIndex(this.selected);
+  }
 }
 
 // The mask render that renders the U Cutout of black
@@ -1056,7 +1065,7 @@ class NullScene extends LobbyScene {
 class LogoScene extends LobbyScene {
   constructor() {
     super('LogoScene', new SceneOptions(false, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
-    
+    // TODO: Add the above logos to the assets, 400px x 400px
     this.logos = [];
     this.amount = 5;
     this.animationLength = 3.5;
@@ -1109,8 +1118,7 @@ class LogoScene extends LobbyScene {
 
         point(pos.x, pos.y);
         imageMode(CENTER);
-        // TODO: Make sure selected returns the proper index and not a string
-        image(this.logos[this.options.selected], pos.x, pos.y, spacing/2, spacing/2);
+        image(this.logos[this.options.getSelectedIndex()], pos.x, pos.y, spacing/2, spacing/2);
       }
     }
   }
