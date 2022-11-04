@@ -262,7 +262,7 @@ function startup() {
   });
   document.querySelectorAll('select').forEach(element => {
     element.addEventListener('input', saveSettings);
-    element.addEventListener('input', setSelection, false);
+    element.addEventListener('input', setSelection);
   });
 }
 
@@ -544,6 +544,8 @@ function loadSettings() {
 function setSelection(event) {
   let sceneSelected = event.currentTarget.getAttribute('data-playlist-type');
   let optionSelected = event.currentTarget.options[event.currentTarget.selectedIndex].text;
+  
+  console.log('setSelection triggered:',sceneSelected,optionSelected);
   
   var scene = sceneManager.getScene(sceneSelected + 'Scene');
   if(scene !== null) {
@@ -1085,7 +1087,7 @@ class NullScene extends LobbyScene {
 // SCENES
 
 // Logo Scene
-// TODO: Make the scene work with args
+// TODO: Make the scene work with args < broken, need to determine what is happening
 class LogoScene extends LobbyScene {
   constructor() {
     super('LogoScene', new SceneOptions(false, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
