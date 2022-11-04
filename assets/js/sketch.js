@@ -214,22 +214,32 @@ class EaseUtil {
   }
 }
 
+// P5JS Utilities
+class P5Util {
+  constructor() {}
+  
+  stringToVector(string) {
+    let vector = mask.position.replace(/[{()}]/g, '').split(',');
+    vector = createVector(Number(vector[0]), Number(vector[1]));
+    
+    return vector;
+  }
+}
+
 // Global Data
 let sceneList = [{name: 'Logo', options: {enabled: true, values: ['Union', 'NRG', 'NGC','Diversey']}}, {name: 'Water', options: {enabled: false, values: []}}, {name: 'Air', options: {enabled: false, values: []}}, {name: 'Life', options: {enabled: false, values: []}}];
 let editorSettings = {};
 let editorState = false;
 let mathUtil = new MathUtil();
 let easeUtil = new EaseUtil();
+let p5Util = new P5Util();
 let sceneManager;
 
 // // TODO: Scene manager should submit a scene list when it runs the start function
 // // TODO: Scene manager should constantly update the scene timeline
 // // TODO: Scene manager to update scene duration every time it switches scenes
 // // TODO: Scene manager to update the play queue every time it switches scenes
-// // TODO: Scene list should include scene function name as well, and the option should be passed in as an arg of that function ex: logo('union)
-// // TODO: Add ability to mask the scene to the U
 // // TODO: Add the ability to save the mask setup to the editor settings
-
 
 
 // Startup function
@@ -493,13 +503,15 @@ function loadSettings() {
   // Load the settings
   let settings = {};
   if(localStorage.getItem(name) == null) {
+    sceneManager.maskEditor.setMaskSettings(null);
     settings = {
       "sceneDuration":60,
       "playlistItems":getPlaylistSettings(),
       "canvasPosition":[
         200,
         200
-      ]
+      ],
+      "maskSettings": sceneManager.maskEditor.getMaskSettings()
     };
   } else {
     settings = JSON.parse(localStorage.getItem(name));
@@ -536,6 +548,8 @@ function loadSettings() {
         playlistItemChanged(element.name);
       }
     });
+    
+    sceneManager.maskEditor.setMaskSettings(settings.maskSettings);
   }
   editorSettings = settings;
 }
@@ -545,12 +559,9 @@ function setSelection(event) {
   let sceneSelected = event.currentTarget.getAttribute('data-playlist-type');
   let optionSelected = event.currentTarget.options[event.currentTarget.selectedIndex].text;
   
-  console.log('setSelection triggered:',sceneSelected,optionSelected);
-  
   var scene = sceneManager.getScene(sceneSelected + 'Scene');
   if(scene !== null) {
     scene.options.setSelected(optionSelected);
-    console.log('setting ' + sceneSelected + 'Scene options to ' + optionSelected);
   }
 }
 
@@ -761,9 +772,8 @@ class SceneOptions {
         this.selected = this.values[0];
       }
     } else {
-      console.log(value);
-      if(this.values.findIndex(value) !== -1) {
-        this.selected = this.values.findIndex(value);
+      if(this.values.find(val => val === value)) {
+        this.selected = this.values.findIndex(val => val === value);
       } else {
         this.selected = this.values[0];
       }
@@ -824,12 +834,74 @@ class MaskEditor {
     this.masks.forEach(mask => {
       mask.drop();
     })
+
+    saveSettings();
   }
   
-  // TODO: MAKE A MASK SERIALIZER FOR SAVING TO THE SETTINGS, MAKE THIS SAVE AND UPDATE CALL AFTER EVERY DROP OF THE MOUSE AFTER DRAGGING
+  // TODO: TEST MASK SERIALIZATION
   // Returns the mask settings for all masks
   getMaskSettings() {
     // {masks: [{points: [{type: 'V', position: (x,y)}, {type: 'C', start: (x,y), startControl: (x,y), endControl: (x,y), end: (x,y)}], position: (x,y), size: (x,y)}]}
+    let masks = [];
+    
+    this.masks.forEach(mask => {
+      let points = [];
+      mask.points.forEach(point => {
+        let p = {};
+        if(point.constructor.name === 'MaskVertex') {
+          p.type = 'V';
+          p.position = point.position.toString();
+        } else {
+          p.type = 'C';
+          p.start = point.start.toString();
+          p.startControl = point.startControl.toString();
+          p.endControl = point.endControl.toString();
+          p.end = point.end.toString();
+        }
+
+        points.push(p);
+      });
+
+      masks.push({points: points, position: mask.position.toString(), size: mask.size.toString()});
+    });
+    
+    return {masks: masks};
+  }
+  
+  // Deserializes mask settings and applies them to the masks
+  setMaskSettings(maskSettings) {
+    if(maskSettings === null) {
+      this.defaultMasks();
+    } else {
+      let masks = [];
+      maskSettings.masks.forEach(mask => {
+        let points = [];
+        mask.points.forEach(point => {
+          let p = '';
+          if(point.type === 'V') {
+            // Vertex
+            p = new MaskVertex(p5Util.stringToVector(point.position));
+          } else {
+            // Curve
+            p = new MaskCurve(p5Util.stringToVector(point.start), p5Util.stringToVector(point.startControl), p5Util.stringToVector(point.endControl), p5Util.stringToVector(point.end));
+          }
+
+          points.push(p);
+        });
+
+        let position = p5Util.stringToVector(mask.position);
+        let size = p5Util.stringToVector(mask.size);
+        
+        masks.push(new Mask(points, position, size));
+      });
+
+      this.masks = masks;
+    }
+  }
+  
+  // Sets the default mask settings
+  defaultMasks() {
+    // TODO: Set up the default masks
     
   }
 }
@@ -1088,7 +1160,6 @@ class NullScene extends LobbyScene {
 // SCENES
 
 // Logo Scene
-// TODO: Make the scene work with args < broken, need to determine what is happening
 class LogoScene extends LobbyScene {
   constructor() {
     super('LogoScene', new SceneOptions(false, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));

@@ -72,7 +72,7 @@ h4 {
 .editor-block {
   display: flex;
   flex-direction: column;
-  flex-wrap: no-wrap;
+  flex-wrap: nowrap;
   justify-content: flex-start;
   align-items: stretch;
   margin-bottom: 32px;
@@ -171,6 +171,7 @@ textarea, input {
 input {
   box-sizing: border-box;
   color: white;
+  pointer-events: inherit;
 }
 
 ::selection {
@@ -347,6 +348,7 @@ select {
   line-height: inherit;
   outline: none;
   text-align: center;
+  pointer-events: inherit;
   transition: 0.25s ease;
 }
 
@@ -360,6 +362,7 @@ select {
 
 .editor-collapsed { 
   opacity: 0%;
+  pointer-events: none;
 }
 
 .canvas-position-marker-hidden {
