@@ -262,6 +262,7 @@ function startup() {
   });
   document.querySelectorAll('select').forEach(element => {
     element.addEventListener('input', saveSettings);
+    element.addEventListener('input', setSelection, false);
   });
 }
 
@@ -539,6 +540,18 @@ function loadSettings() {
   editorSettings = settings;
 }
 
+// Sets the selected option for a scene
+function setSelection(event) {
+  let sceneSelected = event.currentTarget.getAttribute('data-playlist-type');
+  let optionSelected = event.currentTarget.options[event.currentTarget.selectedIndex].text;
+  
+  var scene = sceneManager.getScene(sceneSelected + 'Scene');
+  if(scene !== null) {
+    scene.options.setSelected(optionSelected);
+    console.log('setting ' + sceneSelected + 'Scene options to ' + optionSelected);
+  }
+}
+
 // Mask Editor Dragging dectections
 function mousePressed() {
   if(editorState) {
@@ -690,6 +703,17 @@ class SceneManager {
     colorMode(RGB, 255); // Color Mode
     imageMode(CORNER); // Image Draw Mode
   }
+  
+  // Returns a scene based on its name
+  getScene(name) {
+    let sceneIndex = this.scenes.findIndex(scene => scene.name === name);
+    
+    if(sceneIndex === -1) {
+      return null;
+    } else {
+      return this.scenes[sceneIndex];
+    }
+  }
 }
 
 class LobbyScene {
@@ -736,7 +760,7 @@ class SceneOptions {
       }
     } else {
       if(this.values.findIndex(value) !== -1) {
-        this.selected = this.values[this.values.findIndex(value)];
+        this.selected = this.values.findIndex(value);
       } else {
         this.selected = this.values[0];
       }
@@ -1065,7 +1089,6 @@ class NullScene extends LobbyScene {
 class LogoScene extends LobbyScene {
   constructor() {
     super('LogoScene', new SceneOptions(false, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
-    // TODO: Add the above logos to the assets, 400px x 400px
     this.logos = [];
     this.amount = 5;
     this.animationLength = 3.5;
@@ -1087,7 +1110,6 @@ class LogoScene extends LobbyScene {
     let spacing = width/this.amount;
     // master timer loop to duration
     let masterTimer = ((millis() / 1000) % this.animationLength)/this.animationLength;
-    // console.log(masterTimer);
     let gapDuration = this.animationGap / this.animationLength;
 
     let xOffset = 0;
