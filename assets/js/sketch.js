@@ -600,7 +600,7 @@ class SceneManager {
     
     // Mask Editor
     let mask1 = new Mask()
-    this.maskEditor = new MaskEditor([new Mask([new MaskVertex(createVector(100,50)), new MaskCurve(createVector(100,150), createVector(100,200), createVector(125,200), createVector(200,200)), new MaskVertex(createVector(200,50))], createVector(0,0), createVector(width/2, height)), new Mask([new MaskVertex(createVector(300,50)), new MaskVertex(createVector(300,150)), new MaskVertex(createVector(400,150)), new MaskVertex(createVector(400,50))], createVector(width/2,0), createVector(width/2, height))]);
+    this.maskEditor = new MaskEditor();
   }
 
   // Acts like the standard sketch preload function
@@ -792,8 +792,12 @@ class SceneOptions {
 
 // The mask render that renders the U Cutout of black
 class MaskEditor {
-  constructor(masks) {
+  constructor(masks = []) {
     this.masks = masks;
+    
+    if(masks.length === 0 || !Array.isArray(this.masks)) {
+      this.defaultMasks();
+    }
   }
 
   // Draws the masks
@@ -901,8 +905,7 @@ class MaskEditor {
   
   // Sets the default mask settings
   defaultMasks() {
-    // TODO: Set up the default masks
-    
+    this.masks = [new Mask([new MaskVertex(createVector(100,50)), new MaskCurve(createVector(100,150), createVector(100,200), createVector(125,200), createVector(200,200)), new MaskVertex(createVector(200,50))], createVector(0,0), createVector(width/2, height)), new Mask([new MaskVertex(createVector(300,50)), new MaskVertex(createVector(300,150)), new MaskVertex(createVector(400,150)), new MaskVertex(createVector(400,50))], createVector(width/2,0), createVector(width/2, height))];
   }
 }
 
