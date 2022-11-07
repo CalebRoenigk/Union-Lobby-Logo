@@ -15,9 +15,15 @@ function setup() {
   
   // TODO: ADD SCENES TO THE SCENE MANAGER
   sceneManager.scenes.push(new LogoScene());
-  
+
   // Run the scene manager preload operation
   sceneManager.preload();
+
+  // Get the scene list (from the sketch)
+  sceneList = sceneManager.getAllScenes();
+
+  // Playlist
+  generatePlaylist(sceneList);
 
   // Load Settings
   loadSettings();
@@ -232,7 +238,7 @@ class P5Util {
 }
 
 // Global Data
-let sceneList = [{name: 'Logo', options: {enabled: true, values: ['Union', 'NRG', 'NGC','Diversey']}}, {name: 'Water', options: {enabled: false, values: []}}, {name: 'Air', options: {enabled: false, values: []}}, {name: 'Life', options: {enabled: false, values: []}}];
+let sceneList = [];// [{name: 'Logo', options: {enabled: true, values: ['Union', 'NRG', 'NGC','Diversey']}}, {name: 'Water', options: {enabled: false, values: []}}, {name: 'Air', options: {enabled: false, values: []}}, {name: 'Life', options: {enabled: false, values: []}}]
 let editorSettings = {};
 let editorState = false;
 let mathUtil = new MathUtil();
@@ -240,11 +246,10 @@ let easeUtil = new EaseUtil();
 let p5Util = new P5Util();
 let sceneManager;
 
-// // TODO: Scene manager should submit a scene list when it runs the start function
 // // TODO: Scene manager should constantly update the scene timeline
 // // TODO: Scene manager to update scene duration every time it switches scenes
 // // TODO: Scene manager to update the play queue every time it switches scenes
-// // TODO: Add the ability to save the mask setup to the editor settings
+// // TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor
 
 
 // Startup function
@@ -261,15 +266,10 @@ function startup() {
   // Update state of editor
   updateEditorState();
 
-  // TODO: Get the scene list (from the sketch)
-
-  // Playlist
-  generatePlaylist(sceneList);
-
   // Timers and Clocks
   updateEditor();
   setInterval(updateEditor, 10000);
-  setInterval(updateEditorPlayback, 1000);
+  // setInterval(updateEditorPlayback, 1000); // TODO: Move this updating to the scene manager and not on an interval
 
   // Event Listeners
   document.querySelectorAll('input').forEach(element => {
@@ -732,6 +732,27 @@ class SceneManager {
       return this.scenes[sceneIndex];
     }
   }
+  
+  // Returns a scene list of all scenes in the manager
+  getAllScenes() {
+    // {name: 'Logo', options: {enabled: true, values: ['Union', 'NRG', 'NGC','Diversey']}}, {name: 'Water', options: {enabled: false, values: []}}
+    let scenes = [];
+    this.scenes.forEach(scene => {
+      let sceneObject = {};
+      sceneObject.name = scene.name.split('Scene')[0];
+      sceneObject.options = {};
+
+      sceneObject.options.enabled = scene.options.enabled;
+      sceneObject.options.values = [];
+      if(sceneObject.options.enabled) {
+        sceneObject.options.values = scene.options.values;
+      }
+      
+      scenes.push(sceneObject);
+    });
+    
+    return scenes;
+  }
 }
 
 class LobbyScene {
@@ -847,7 +868,6 @@ class MaskEditor {
     saveSettings();
   }
   
-  // TODO: TEST MASK SERIALIZATION
   // Returns the mask settings for all masks
   getMaskSettings() {
     // {masks: [{points: [{type: 'V', position: (x,y)}, {type: 'C', start: (x,y), startControl: (x,y), endControl: (x,y), end: (x,y)}], position: (x,y), size: (x,y)}]}
