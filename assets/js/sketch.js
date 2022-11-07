@@ -219,10 +219,15 @@ class P5Util {
   constructor() {}
   
   stringToVector(string) {
-    let vector = mask.position.replace(/[{()}]/g, '').split(',');
+    let vector = string.replace(/[{()}]/g, '').split(',');
     vector = createVector(Number(vector[0]), Number(vector[1]));
     
     return vector;
+  }
+  
+  truncatedVectorString(vector) {
+    // console.log('vector', vector, ('(' + [vector.x,vector.y].join(',') + ')'));
+    return '(' + [vector.x,vector.y].join(',') + ')';
   }
 }
 
@@ -854,19 +859,19 @@ class MaskEditor {
         let p = {};
         if(point.constructor.name === 'MaskVertex') {
           p.type = 'V';
-          p.position = point.position.toString();
+          p.position = p5Util.truncatedVectorString(point.position);
         } else {
           p.type = 'C';
-          p.start = point.start.toString();
-          p.startControl = point.startControl.toString();
-          p.endControl = point.endControl.toString();
-          p.end = point.end.toString();
+          p.start = p5Util.truncatedVectorString(point.start);
+          p.startControl = p5Util.truncatedVectorString(point.startControl);
+          p.endControl = p5Util.truncatedVectorString(point.endControl);
+          p.end = p5Util.truncatedVectorString(point.end);
         }
 
         points.push(p);
       });
 
-      masks.push({points: points, position: mask.position.toString(), size: mask.size.toString()});
+      masks.push({points: points, position: p5Util.truncatedVectorString(mask.position), size: p5Util.truncatedVectorString(mask.size)});
     });
     
     return {masks: masks};
@@ -874,8 +879,7 @@ class MaskEditor {
   
   // Deserializes mask settings and applies them to the masks
   setMaskSettings(maskSettings) {
-    console.log("mask settings", maskSettings);
-    if(maskSettings === null) {
+    if(maskSettings === null || maskSettings === undefined) {
       this.defaultMasks();
     } else {
       let masks = [];
