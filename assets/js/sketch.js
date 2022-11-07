@@ -246,9 +246,6 @@ let easeUtil = new EaseUtil();
 let p5Util = new P5Util();
 let sceneManager;
 
-// // TODO: Scene manager should constantly update the scene timeline
-// // TODO: Scene manager to update scene duration every time it switches scenes
-// // TODO: Scene manager to update the play queue every time it switches scenes
 // // TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor
 
 
@@ -269,7 +266,6 @@ function startup() {
   // Timers and Clocks
   updateEditor();
   setInterval(updateEditor, 10000);
-  // setInterval(updateEditorPlayback, 1000); // TODO: Move this updating to the scene manager and not on an interval
 
   // Event Listeners
   document.querySelectorAll('input').forEach(element => {
@@ -564,7 +560,7 @@ function setSelection(event) {
   let sceneSelected = event.currentTarget.getAttribute('data-playlist-type');
   let optionSelected = event.currentTarget.options[event.currentTarget.selectedIndex].text;
   
-  var scene = sceneManager.getScene(sceneSelected + 'Scene');
+  var scene = sceneManager.getScene(sceneSelected);
   if(scene !== null) {
     scene.options.setSelected(optionSelected);
   }
@@ -623,6 +619,7 @@ class SceneManager {
 
     if(this.sceneTimer <= 0) {
       this.sceneTimer = this.duration;
+      this.updateSceneSettings();
       this.playNext();
       this.resetModes();
     }
@@ -652,6 +649,14 @@ class SceneManager {
 
     // Draw the mask
     this.maskEditor.draw();
+    
+    // Update the editor timeline
+    document.getElementById('editor-playback-timeline').setAttribute('style', '--playback-scale: ' + this.getPlaybackPercent() + '%;');
+  }
+  
+  // Returns the playback time as a percentage
+  getPlaybackPercent() {
+    return 100 - round((this.sceneTimer / this.duration) * 100);
   }
 
   // Plays the next enabled scene
@@ -739,7 +744,7 @@ class SceneManager {
     let scenes = [];
     this.scenes.forEach(scene => {
       let sceneObject = {};
-      sceneObject.name = scene.name.split('Scene')[0];
+      sceneObject.name = scene.name;
       sceneObject.options = {};
 
       sceneObject.options.enabled = scene.options.enabled;
@@ -752,6 +757,25 @@ class SceneManager {
     });
     
     return scenes;
+  }
+  
+  // Updates the scene duration and playlist options (done at the end of a scene)
+  updateSceneSettings() {
+    this.duration = document.getElementById('editor-scenetime').value;
+    
+    // Update which scenes are marked enabled
+    // {name: 'Logo', options: {enabled: true, selected: 'Union'}, enabled: true}
+    let playlistSettings = getPlaylistSettings();
+    
+    playlistSettings.forEach(scene => {
+      let sceneIndex = this.scenes.findIndex(s => s.name === scene.name);
+      if(sceneIndex !== -1) {
+        this.scenes[sceneIndex].enabled = scene.enabled;
+        if(scene.options.enabled) {
+          this.scenes[sceneIndex].options.setSelected(scene.options.selected);
+        }
+      }
+    });
   }
 }
 
@@ -1190,7 +1214,7 @@ class NullScene extends LobbyScene {
 // Logo Scene
 class LogoScene extends LobbyScene {
   constructor() {
-    super('LogoScene', new SceneOptions(false, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
+    super('Logo', new SceneOptions(false, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
     this.logos = [];
     this.amount = 5;
     this.animationLength = 3.5;
