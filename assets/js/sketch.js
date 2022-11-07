@@ -874,6 +874,7 @@ class MaskEditor {
   
   // Deserializes mask settings and applies them to the masks
   setMaskSettings(maskSettings) {
+    console.log("mask settings", maskSettings);
     if(maskSettings === null) {
       this.defaultMasks();
     } else {
