@@ -14,16 +14,17 @@ function preload() {
   // sceneManager.preload();
   
   // let img = loadImage('../../assets/img/logo/Union.png');
-  logos.push(loadImage('assets/img/logo/Union.png', sucess, fail));
-  logos.push(loadImage('assets/img/logo/NRG.png', sucess, fail));
-  logos.push(loadImage('assets/img/logo/NGC.png', sucess, fail));
-  logos.push(loadImage('assets/img/logo/Diversey.png', sucess, fail));
-  logos.push(loadImage('assets/img/logo/Fox.png', sucess, fail));
-  console.log(logos);
+  // logos.push(loadImage('assets/img/logo/Union.png', sucess, fail));
+  // logos.push(loadImage('assets/img/logo/NRG.png', sucess, fail));
+  // logos.push(loadImage('assets/img/logo/NGC.png', sucess, fail));
+  // logos.push(loadImage('assets/img/logo/Diversey.png', sucess, fail));
+  // logos.push(loadImage('assets/img/logo/Fox.png', sucess, fail));
+  // console.log(logos);
 }
 
 function sucess() {
   console.log('loaded!');
+  console.log(this.sceneManager.scenes[0].logos);
 }
 
 function fail() {
@@ -1372,7 +1373,7 @@ class LogoScene extends LobbyScene {
     let logos = [];
     this.logos.forEach(logo => {
       // TODO: Fix this preloading... possible you may just need to try on Prod due to CORS
-      let img = loadImage('../../assets/img/logo/' + logo + '.png');
+      let img = loadImage('assets/img/logo/' + logo + '.png', sucess, fail);
       logos.push(img);
     });
     
