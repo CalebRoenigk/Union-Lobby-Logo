@@ -1380,6 +1380,9 @@ class LogoScene extends LobbyScene {
   preload() {
     console.log('running preload on logo scene');
     let logos = [];
+    this.options.values.forEach(option => {
+      logos.push(option);
+    })
     this.logos.forEach(logo => {
       // TODO: Fix this preloading... possible you may just need to try on Prod due to CORS
       let img = loadImage('assets/img/logo/' + logo + '.png', sucess, fail);
