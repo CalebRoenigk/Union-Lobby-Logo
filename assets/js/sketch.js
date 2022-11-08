@@ -13,7 +13,6 @@ function preload() {
 }
 
 function setup() {
-  console.log("calling setup!");
   // Force the canvas to be the scene size
   pixelDensity(1);
   
@@ -1350,14 +1349,11 @@ class LogoScene extends LobbyScene {
   }
   
   preload() {
-    console.log('running preload on logo scene');
     let logos = [];
     this.options.values.forEach(logo => {
-      // TODO: Fix this preloading... possible you may just need to try on Prod due to CORS
       let img = loadImage('assets/img/logo/' + logo + '.png');
       logos.push(img);
     });
-    
     this.logos = logos;
   }
   
@@ -1396,7 +1392,6 @@ class LogoScene extends LobbyScene {
 
         point(pos.x, pos.y);
         imageMode(CENTER);
-        console.log(this.logos[this.options.getSelectedIndex()], pos.x, pos.y, spacing/2, spacing/2);
         image(this.logos[this.options.getSelectedIndex()], pos.x, pos.y, spacing/2, spacing/2);
       }
     }
