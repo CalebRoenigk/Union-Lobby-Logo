@@ -12,6 +12,14 @@ body {
   font-weight: 200;
   background-color: black;
   overflow-x:  hidden;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.hide-cursor {
+  cursor: none;
 }
 
 .container { 
@@ -30,6 +38,7 @@ body {
     'prompt';
   padding: 16px;
   z-index: 100;
+  background-color: rgba(0,0,0,0.875);
   transition: 0.375s ease;
 }
 
@@ -377,5 +386,12 @@ select {
 
 .canvas-indicator-visible {
   border: 1px dashed rgba(0,255,255,1);
+}
+
+.p5Canvas::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 

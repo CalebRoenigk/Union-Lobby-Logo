@@ -249,9 +249,13 @@ let easeUtil = new EaseUtil();
 let p5Util = new P5Util();
 let sceneManager;
 
-// // TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor
-// // TODO: Refactor to remove any remaining warnings in Rider
-
+// TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor
+// TODO: Refactor to remove any remaining warnings in Rider
+// TODO: Add a force null grid option so that the null grid can be displayed when setting up the mask!
+// TODO: Make the title of the current scene get updated in the editor every time playNext is called
+// TODO: Clamp mask points to within the canvas
+// TODO: Check that options saving works
+// TODO: POTENTIALLY SCALE THE CANVAS UP TO 900px Square, or even 1000px, the machine can probs handle it
 
 // Startup function
 function startup() {
@@ -291,6 +295,7 @@ function updateEditorState() {
       if(document.querySelector('canvas') !== null) {
         document.querySelector('canvas').classList.add('canvas-indicator-visible');
       }
+      document.querySelector('body').classList.remove('hide-cursor');
     } else {
       // Close Editor
       document.getElementById('editor-panel').classList.add('editor-collapsed');
@@ -298,6 +303,7 @@ function updateEditorState() {
       if(document.querySelector('canvas') !== null) {
         document.querySelector('canvas').classList.remove('canvas-indicator-visible');
       }
+      document.querySelector('body').classList.add('hide-cursor');
     }
  }
 
