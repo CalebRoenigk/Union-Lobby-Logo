@@ -695,6 +695,10 @@ class SceneManager {
 
   // Returns the index of the passed scene
   findSceneIndex(scene) {
+    if(scene === null) {
+      return -1;
+    }
+    
     for(let i=0; i < this.scenes.length; i++) {
       if(this.scenes[i].name == scene.name) {
         return i;
