@@ -14,11 +14,11 @@ function preload() {
   // sceneManager.preload();
   
   // let img = loadImage('../../assets/img/logo/Union.png');
-  logos.push(loadImage('../img/logo/Union.png', sucess, fail));
-  logos.push(loadImage('../img/logo/NRG.png'));
-  logos.push(loadImage('../img/logo/NGC.png'));
-  logos.push(loadImage('../img/logo/Diversey.png'));
-  logos.push(loadImage('../img/logo/Fox.png'));
+  logos.push(loadImage('assets/img/logo/Union.png', sucess, fail));
+  logos.push(loadImage('assets/img/logo/NRG.png', sucess, fail));
+  logos.push(loadImage('assets/img/logo/NGC.png', sucess, fail));
+  logos.push(loadImage('assets/img/logo/Diversey.png', sucess, fail));
+  logos.push(loadImage('assets/img/logo/Fox.png', sucess, fail));
   console.log(logos);
 }
 
