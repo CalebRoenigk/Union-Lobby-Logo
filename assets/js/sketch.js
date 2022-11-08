@@ -27,6 +27,9 @@ function setup() {
 
   // Load Settings
   loadSettings();
+
+  // Force the scene manager to load the first scene
+  sceneManager.playNext();
 }
 
 function draw() {
@@ -247,6 +250,7 @@ let p5Util = new P5Util();
 let sceneManager;
 
 // // TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor
+// // TODO: Refactor to remove any remaining warnings in Rider
 
 
 // Startup function
@@ -271,6 +275,8 @@ function startup() {
   document.querySelectorAll('input').forEach(element => {
     element.addEventListener('input', saveSettings);
   });
+  document.getElementById('editor-scenetime').addEventListener('change', validateSceneDuration);
+  
   document.querySelectorAll('select').forEach(element => {
     element.addEventListener('input', saveSettings);
     element.addEventListener('input', setSelection);
@@ -524,7 +530,7 @@ function loadSettings() {
     settings = JSON.parse(localStorage.getItem(name));
 
     // Load in the scene duration and canvas position
-    document.getElementById('editor-scenetime').value = settings.sceneDuration;
+    document.getElementById('editor-scenetime').value = Math.max(settings.sceneDuration, sceneManager.getMinimumSceneDuration()); // Does a safety check in case scene duration did not get validation before saving, prevents scene duration from bugging out and being set to less than the transition time (this prevents issue of black screening/flickering)
     document.getElementById('editor-canvas-x').value = settings.canvasPosition[0];
     document.getElementById('editor-canvas-y').value = settings.canvasPosition[1];
 
@@ -557,6 +563,7 @@ function loadSettings() {
     });
     
     sceneManager.maskEditor.setMaskSettings(settings.maskSettings);
+    sceneManager.setDuration(settings.sceneDuration);
   }
   editorSettings = settings;
 }
@@ -569,6 +576,15 @@ function setSelection(event) {
   var scene = sceneManager.getScene(sceneSelected);
   if(scene !== null) {
     scene.options.setSelected(optionSelected);
+  }
+}
+
+// Validates data for the scene duration input
+function validateSceneDuration() {
+  let sceneDurationInput = document.getElementById('editor-scenetime');
+  let minimumSceneDuration = sceneManager.getMinimumSceneDuration();
+  if(sceneDurationInput.value < minimumSceneDuration) {
+    sceneDurationInput.value = minimumSceneDuration;
   }
 }
 
@@ -600,7 +616,7 @@ class SceneManager {
 
     this.activeScene = null;
     this.sceneTimer = duration;
-    this.transitionDuration = this.duration / 20; // A tenth of the total duration on either end of each scene
+    this.transitionDuration = 0;
 
     // Null Scene
     this.nullScene = new NullScene();
@@ -608,12 +624,18 @@ class SceneManager {
     // Mask Editor
     let mask1 = new Mask()
     this.maskEditor = new MaskEditor();
+    
+    // Privte Settings
+    this.minimumTransitionTime = 1.5; // 1.5s minimum transition time
+    
+    this.calculateTransitionTime();
   }
 
   // Acts like the standard sketch preload function
   preload() {
     // Iterate over each scene and run its preload function
     for(let i=0; i < this.scenes.length; i++) {
+      console.log('preloading scene: ' + i + ' scenename: ' + this.scenes[i].name);
       this.scenes[i].preload();
     }
   }
@@ -666,41 +688,91 @@ class SceneManager {
   }
 
   // Plays the next enabled scene
+  // TODO: REFACTOR THIS CAUSE IT FUCKING BLOWS
   playNext() {
-    // Get the scene index of the active scene
-    let activeIndex = this.findSceneIndex(this.activeScene);
-    if(this.activeScene !== null) {
-      this.activeScene.startupExectued = false;
-    }
+    console.log('play next!');
+    // TODO: STEPS BELOW
+    // Get an array of enabled playlist scenes
+    let activeScenes = this.getActiveScenes();
 
-    if(activeIndex === -1) {
-      this.activeScene = null;
-      // console.log('Active Scene not found...');
-      if(this.getActiveSceneCount() > 0) {
-        activeIndex = 0;
-      } else {
-        return null;
-      }
+    // CONDITION A: The playlist has no enabled scenes
+    // Force Break and play the null scene
+    if(activeScenes.length === 0 || this.scenes.length === 0) {
+      this.activeScene = null; // Forces the scene to be the null state scene
+      return null;
     }
-
-    if(activeIndex >= this.scenes.length) {
-      activeIndex = 0;
+    
+    // CONDITION B: The playlist has only 1 enabled scene
+    // Play the first enabled scene
+    if(activeScenes.length === 1) {
+      this.activeScene = activeScenes[0]; // Forces the scene to be the null state scene
     } else {
-      activeIndex++;
-    }
-
-    for(let i=activeIndex; i < this.scenes.length; i++) {
-      // Find the first scene that is enabled
-      if(this.scenes[i].enabled) {
-        this.activeScene = this.scenes[i];
-        this.activeScene.startupExectued = false;
-        return i;
+      // CONDITION C: The playlist has more than 1 enabled scene
+      // If the active scene is null, force the first enabled scene as the active scene
+      if(this.activeScene === null) {
+        this.activeScene = this.activeScene = activeScenes[0];
+        return this.activeScene;
       }
+      // Get the index of the currently enabled scene in the active scenes list
+      let currentlyActiveSceneIndex = activeScenes.findIndex(scene => scene.name === this.activeScene.name);
+      // If the currently active scene is not present in this array, play the first enabled scene
+      if(currentlyActiveSceneIndex === -1) {
+        this.activeScene = this.activeScene = activeScenes[0];
+        return this.activeScene;
+      }
+      
+      // If the currently enabled scene index is the length of the enabled scenes array minus 1, then play the first enabled scene
+      if(currentlyActiveSceneIndex === activeScenes.length - 1) {
+        this.activeScene = this.activeScene = activeScenes[0];
+        return this.activeScene;
+      }
+      
+      // Else, set the next enabled scene as the active scene, set the active scene
+      this.activeScene = activeScenes[currentlyActiveSceneIndex+1];
     }
 
-    this.activeScene = null;
-    console.log('Active Scene not selectable...');
-    return null;
+    return this.activeScene;
+    
+    // // OLD
+    // console.log('playing next!');
+    // // Get the scene index of the active scene
+    // let activeIndex = this.findSceneIndex(this.activeScene);
+    // if(this.activeScene !== null) {
+    //   this.activeScene.startupExectued = false;
+    // }
+    //
+    // if(activeIndex === -1) {
+    //   this.activeScene = null;
+    //   // console.log('Active Scene not found...');
+    //   if(this.getActiveSceneCount() > 0) {
+    //     activeIndex = 0;
+    //   } else {
+    //     return null;
+    //   }
+    // }
+    //
+    // console.log('precheck on active index: ' + activeIndex);
+    // if(activeIndex >= this.scenes.length) {
+    //   activeIndex = 0;
+    // } else {
+    //   activeIndex++;
+    // }
+    //
+    // console.log('sceneLength: ' + this.scenes.length + ' active index: ' + activeIndex);
+    //
+    // for(let i=activeIndex; i < this.scenes.length; i++) {
+    //   // Find the first scene that is enabled
+    //   console.log('checking scene: ' + i + ' for enabled state');
+    //   if(this.scenes[i].enabled) {
+    //     this.activeScene = this.scenes[i];
+    //     this.activeScene.startupExectued = false;
+    //     return i;
+    //   }
+    // }
+    //
+    // this.activeScene = null;
+    // console.log('Active Scene not selectable...');
+    // return null;
   }
 
   // Returns the index of the passed scene
@@ -717,16 +789,21 @@ class SceneManager {
     return -1;
   }
   
-  // Returns the count of active scenes in the playlist
-  getActiveSceneCount() {
-    let activeCount = 0;
+  // Returns an array of all the active scenes
+  getActiveScenes() {
+    let activeScenes = [];
     this.scenes.forEach(scene => {
       if(scene.enabled) {
-        activeCount++;
+        activeScenes.push(scene);
       }
     });
     
-    return activeCount;
+    return activeScenes;
+  }
+  
+  // Returns the count of active scenes in the playlist
+  getActiveSceneCount() {
+    return this.getActiveScenes().length;
   }
 
   // Draws a 'null' scene
@@ -804,6 +881,28 @@ class SceneManager {
     });
 
     this.transitionDuration = this.duration / 20;
+  }
+  
+  // Sets the duration to a value and recalculates all settings reliant on this value
+  setDuration(duration) {
+    duration = Math.max(this.getMinimumSceneDuration(), duration); // The duration cannot be less than twice the minimum transition time + 1 second
+    
+    this.duration = duration;
+    this.sceneTimer = duration;
+    this.transitionDuration = this.calculateTransitionTime();
+  }
+  
+  // Calculates the transition duration from the duration
+  calculateTransitionTime() {
+    let transitionTime = this.duration / 20; // A tenth of the total duration on either end of each scene
+    transitionTime = Math.max(transitionTime, this.minimumTransitionTime); // The transition time can be no less than the minimum transition time
+    
+    this.transitionDuration = transitionTime;
+  }
+  
+  // Returns the minimum scene duration time
+  getMinimumSceneDuration() {
+    return this.minimumTransitionTime * 2 + 1;
   }
 }
 
@@ -1250,9 +1349,11 @@ class LogoScene extends LobbyScene {
   }
   
   preload() {
+    console.log('running preload on logo scene');
     let logos = [];
     this.logos.forEach(logo => {
-      let img = loadImage('assets/' + logo + '.png');
+      // TODO: Fix this preloading... possible you may just need to try on Prod due to CORS
+      let img = loadImage('assets/' + logo + '.png', console.log('sucess'), failure());
       logos.push(img);
     });
     
@@ -1285,17 +1386,26 @@ class LogoScene extends LobbyScene {
       yOffset = easeUtil.easeInOutCubic((masterTimer - (transitionDuration + gapDuration)) / transitionDuration) * -spacing;
     }
 
-    for(let x = 0; x < count+2; x++) {
-      for(let y = 0; y < count+2; y++) {
+    for(let x = 0; x < this.amount+2; x++) {
+      for(let y = 0; y < this.amount+2; y++) {
         let pos = createVector(x * spacing, y * spacing);
-        if(alterRows && isEven(y) || !alterRows && isEven(x)) {
+        if(alterRows && mathUtil.isEven(y) || !alterRows && mathUtil.isEven(x)) {
           pos = createVector(x * spacing + xOffset, y * spacing + yOffset);
         }
 
         point(pos.x, pos.y);
         imageMode(CENTER);
+        console.log(this.logos[this.options.getSelectedIndex()], pos.x, pos.y, spacing/2, spacing/2);
         image(this.logos[this.options.getSelectedIndex()], pos.x, pos.y, spacing/2, spacing/2);
       }
     }
   }
+}
+
+function sucess() {
+  console.log('loaded!');
+}
+
+function failure() {
+  console.log('not loaded!');
 }
