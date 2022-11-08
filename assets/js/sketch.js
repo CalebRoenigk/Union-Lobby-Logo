@@ -1,23 +1,27 @@
 // P5JS Launch Points
 function preload() {
   startup();
-}
 
-function setup() {
-  // Force the canvas to be the scene size
-  pixelDensity(1);
-  
-  // Create the canvas
-  createCanvas(800,800);
-  
   // Create the scene manager
   sceneManager = new SceneManager();
-  
+
   // TODO: ADD SCENES TO THE SCENE MANAGER
   sceneManager.scenes.push(new LogoScene());
 
   // Run the scene manager preload operation
   sceneManager.preload();
+  
+  let img = loadImage('../../assets/img/logo/Union.png');
+  console.log(img);
+}
+
+function setup() {
+  console.log("calling setup!");
+  // Force the canvas to be the scene size
+  pixelDensity(1);
+  
+  // Create the canvas
+  createCanvas(800,800);
 
   // Get the scene list (from the sketch)
   sceneList = sceneManager.getAllScenes();
@@ -1353,7 +1357,7 @@ class LogoScene extends LobbyScene {
     let logos = [];
     this.logos.forEach(logo => {
       // TODO: Fix this preloading... possible you may just need to try on Prod due to CORS
-      let img = loadImage('assets/' + logo + '.png', console.log('sucess'), failure());
+      let img = loadImage('../../assets/img/logo/' + logo + '.png');
       logos.push(img);
     });
     
@@ -1400,12 +1404,4 @@ class LogoScene extends LobbyScene {
       }
     }
   }
-}
-
-function sucess() {
-  console.log('loaded!');
-}
-
-function failure() {
-  console.log('not loaded!');
 }
