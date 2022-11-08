@@ -1,5 +1,3 @@
-let logos = []; // Used in logo scene
-
 // P5JS Launch Points
 function preload() {
   startup();
@@ -12,23 +10,6 @@ function preload() {
 
   // Run the scene manager preload operation
   sceneManager.preload();
-  
-  // let img = loadImage('../../assets/img/logo/Union.png');
-  // logos.push(loadImage('assets/img/logo/Union.png', sucess, fail));
-  // logos.push(loadImage('assets/img/logo/NRG.png', sucess, fail));
-  // logos.push(loadImage('assets/img/logo/NGC.png', sucess, fail));
-  // logos.push(loadImage('assets/img/logo/Diversey.png', sucess, fail));
-  // logos.push(loadImage('assets/img/logo/Fox.png', sucess, fail));
-  // console.log(logos);
-}
-
-function sucess() {
-  console.log('loaded!');
-  console.log(this.sceneManager.scenes[0].logos);
-}
-
-function fail() {
-  console.log('didnt load!');
 }
 
 function setup() {
@@ -1356,15 +1337,6 @@ class NullScene extends LobbyScene {
   }
 }
 
-// Used to store asset data
-class Asset {
-  constructor(name, type, asset) {
-    this.name = name;
-    this.type = type;
-    this.asset = asset;
-  }
-}
-
 // SCENES
 
 // Logo Scene
@@ -1382,7 +1354,7 @@ class LogoScene extends LobbyScene {
     let logos = [];
     this.options.values.forEach(logo => {
       // TODO: Fix this preloading... possible you may just need to try on Prod due to CORS
-      let img = loadImage('assets/img/logo/' + logo + '.png', sucess, fail);
+      let img = loadImage('assets/img/logo/' + logo + '.png');
       logos.push(img);
     });
     
