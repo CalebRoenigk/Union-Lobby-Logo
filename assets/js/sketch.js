@@ -1,3 +1,5 @@
+let logos = []; // Used in logo scene
+
 // P5JS Launch Points
 function preload() {
   startup();
@@ -9,10 +11,23 @@ function preload() {
   sceneManager.scenes.push(new LogoScene());
 
   // Run the scene manager preload operation
-  sceneManager.preload();
+  // sceneManager.preload();
   
-  let img = loadImage('../../assets/img/logo/Union.png');
-  console.log(img);
+  // let img = loadImage('../../assets/img/logo/Union.png');
+  logos.push(loadImage('../img/logo/Union.png', sucess, fail));
+  logos.push(loadImage('../img/logo/NRG.png'));
+  logos.push(loadImage('../img/logo/NGC.png'));
+  logos.push(loadImage('../img/logo/Diversey.png'));
+  logos.push(loadImage('../img/logo/Fox.png'));
+  console.log(logos);
+}
+
+function sucess() {
+  console.log('loaded!');
+}
+
+function fail() {
+  console.log('didnt load!');
 }
 
 function setup() {
