@@ -282,10 +282,16 @@ function updateEditorState() {
       // Open Editor
       document.getElementById('editor-panel').classList.remove('editor-collapsed');
       document.getElementById('canvas-position-marker').classList.remove('canvas-position-marker-hidden');
+      if(document.querySelector('canvas') !== null) {
+        document.querySelector('canvas').classList.add('canvas-indicator-visible');
+      }
     } else {
       // Close Editor
       document.getElementById('editor-panel').classList.add('editor-collapsed');
       document.getElementById('canvas-position-marker').classList.add('canvas-position-marker-hidden');
+      if(document.querySelector('canvas') !== null) {
+        document.querySelector('canvas').classList.remove('canvas-indicator-visible');
+      }
     }
  }
 
@@ -667,10 +673,14 @@ class SceneManager {
       this.activeScene.startupExectued = false;
     }
 
-    if(activeIndex == -1) {
+    if(activeIndex === -1) {
       this.activeScene = null;
       // console.log('Active Scene not found...');
-      return null;
+      if(this.getActiveSceneCount() > 0) {
+        activeIndex = 0;
+      } else {
+        return null;
+      }
     }
 
     if(activeIndex >= this.scenes.length) {
@@ -705,6 +715,18 @@ class SceneManager {
       }
     }
     return -1;
+  }
+  
+  // Returns the count of active scenes in the playlist
+  getActiveSceneCount() {
+    let activeCount = 0;
+    this.scenes.forEach(scene => {
+      if(scene.enabled) {
+        activeCount++;
+      }
+    });
+    
+    return activeCount;
   }
 
   // Draws a 'null' scene
@@ -780,6 +802,8 @@ class SceneManager {
         }
       }
     });
+
+    this.transitionDuration = this.duration / 20;
   }
 }
 
@@ -1218,7 +1242,7 @@ class NullScene extends LobbyScene {
 // Logo Scene
 class LogoScene extends LobbyScene {
   constructor() {
-    super('Logo', new SceneOptions(false, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
+    super('Logo', new SceneOptions(true, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
     this.logos = [];
     this.amount = 5;
     this.animationLength = 3.5;

@@ -368,3 +368,14 @@ select {
 .canvas-position-marker-hidden {
   opacity: 0%;
 }
+
+.p5Canvas {
+  display: block;
+  border: 1px dashed rgba(0,255,255,0);
+  transition:  border 0.3s ease;
+}
+
+.canvas-indicator-visible {
+  border: 1px dashed rgba(0,255,255,1);
+}
+
