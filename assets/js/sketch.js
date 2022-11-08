@@ -11,7 +11,7 @@ function preload() {
   sceneManager.scenes.push(new LogoScene());
 
   // Run the scene manager preload operation
-  // sceneManager.preload();
+  sceneManager.preload();
   
   // let img = loadImage('../../assets/img/logo/Union.png');
   // logos.push(loadImage('assets/img/logo/Union.png', sucess, fail));
@@ -1353,6 +1353,15 @@ class NullScene extends LobbyScene {
     let count = floor(x/this.letters.length) + 1;
 
     return this.letters[index].repeat(count);
+  }
+}
+
+// Used to store asset data
+class Asset {
+  constructor(name, type, asset) {
+    this.name = name;
+    this.type = type;
+    this.asset = asset;
   }
 }
 
