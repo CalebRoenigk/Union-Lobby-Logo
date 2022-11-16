@@ -253,7 +253,6 @@ let sceneManager;
 // TODO: Refactor to remove any remaining warnings in Rider
 // TODO: Add a force null grid option so that the null grid can be displayed when setting up the mask!
 // TODO: Make the title of the current scene get updated in the editor every time playNext is called
-// TODO: Clamp mask points to within the canvas
 // TODO: Check that options saving works
 // TODO: POTENTIALLY SCALE THE CANVAS UP TO 900px Square, or even 1000px, the machine can probs handle it
 
