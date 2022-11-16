@@ -252,7 +252,6 @@ let sceneManager;
 // TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor
 // TODO: Refactor to remove any remaining warnings in Rider
 // TODO: Add a force null grid option so that the null grid can be displayed when setting up the mask!
-// TODO: Make the title of the current scene get updated in the editor every time playNext is called
 // TODO: Check that options saving works
 // TODO: POTENTIALLY SCALE THE CANVAS UP TO 900px Square, or even 1000px, the machine can probs handle it
 
@@ -462,16 +461,24 @@ function forceReload() {
   window.location.reload();
 }
 
-// Stores the settings in local storage
-function saveSettings() {
+// Stores the settings in local storage, can be forced to skip pulling values from the editor panel, pulls values by default
+function saveSettings(forceUpdateSettings = true) {
   // Storage name
   let name = 'p5jsLobbySettings';
 
   // Storage Data
-  let sceneDuration = Number(document.getElementById('editor-scenetime').value);
-  let playlistItems = getPlaylistSettings();
-  let canvasPosition = [Number(document.getElementById('editor-canvas-x').value), Number(document.getElementById('editor-canvas-y').value)];
-  let maskSettings = sceneManager.maskEditor.getMaskSettings();
+  let sceneDuration = editorSettings.sceneDuration;
+  let playlistItems = editorSettings.playlistItems;
+  let canvasPosition = editorSettings.canvasPosition;
+  let maskSettings = editorSettings.maskSettings;
+  
+  // Update the settings only if force update is true
+  if(forceUpdateSettings) {
+    sceneDuration = Number(document.getElementById('editor-scenetime').value);
+    playlistItems = getPlaylistSettings();
+    canvasPosition = [Number(document.getElementById('editor-canvas-x').value), Number(document.getElementById('editor-canvas-y').value)];
+    maskSettings = sceneManager.maskEditor.getMaskSettings();
+  }
 
   // Validate data
   if(typeof sceneDuration !== 'number' || sceneDuration <= 0) {
@@ -483,7 +490,12 @@ function saveSettings() {
 
 
   let settings = {sceneDuration: sceneDuration, playlistItems: playlistItems, canvasPosition: canvasPosition, maskSettings: maskSettings};
-  editorSettings = settings;
+  
+  // Store the updated settings only if force update is true
+  if(forceUpdateSettings) {
+    editorSettings = settings;
+  }
+  
   let value = JSON.stringify(settings);
 
   localStorage.setItem(name, value);
@@ -541,8 +553,6 @@ function loadSettings() {
     document.getElementById('editor-canvas-x').value = settings.canvasPosition[0];
     document.getElementById('editor-canvas-y').value = settings.canvasPosition[1];
 
-    updateCanvasPosition();
-
     settings.playlistItems.forEach(element => {
       let label = document.querySelector('[for="playlist-' + element.name + '"]')
       if(label != null) {
@@ -573,6 +583,12 @@ function loadSettings() {
     sceneManager.setDuration(settings.sceneDuration);
   }
   editorSettings = settings;
+  
+  // Force a settings save based on the currently pulled settings (does not require an update check)
+  saveSettings(false);
+  
+  // Update the document state
+  updateCanvasPosition();
 }
 
 // Sets the selected option for a scene
@@ -874,6 +890,7 @@ class SceneManager {
   // Updates the editor panel
   updateEditorPanel() {
     // Update the scene title
+    console.log("updating Editor Panel");
     document.getElementById('editor-scene-title').textContent = this.activeScene.name;
   }
 }
