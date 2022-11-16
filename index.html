@@ -41,12 +41,21 @@
           </div>
           </div>
         </div>
-<!--        TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor-->
 <!--        TODO: Add a force null grid option so that the null grid can be displayed when setting up the mask!-->
         <div id="editor-force-options" class="editor-block force-flex-wrap">
           <div class="editor-block-group">
             <input type="button" value="Force Clear Settings" id="editor-force-clear-settings" class="button" onclick="clearEditorSettings()"></input>
             <h4>This button factory resets <span class="text-italics text-underline">all editor settings</span> and forces a page reload.</h4>
+          </div>
+          <div class="editor-block-group">
+            <label for="editor-force-null-grid" class="selectable-setting">
+              <h3>Force Null Grid</h3>
+              <input type="checkbox" name="force-settings" id="editor-force-null-grid" onchange="updateForceNullGrid()"></input>
+              <span class="playlist-checkbox">
+                <div></div>
+              </span>
+            </label>
+            <h4>Check this box to force the scene manager to display only the null grid</h4>
           </div>
         </div>
       </div>

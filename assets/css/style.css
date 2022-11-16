@@ -106,6 +106,7 @@ h4 {
   justify-content: flex-start;
   align-items: stretch;
   gap: 4px;
+  margin-bottom: 32px;
 }
 
 .force-flex-wrap {
@@ -321,7 +322,7 @@ canvas {
   background: rgba(255,255,255,0.875);
 }
 
-#editor-playlist-container > ul > li > label {
+#editor-playlist-container > ul > li > label, #editor-force-options > .editor-block-group > label {
   width: 100%;
   height: 100%;
   display: flex;
@@ -337,7 +338,7 @@ canvas {
   transition: 0.25s ease;
 }
 
-#editor-playlist-container > ul > li > label > input[type="checkbox"] {
+label > input[type="checkbox"] {
   display: none;
 }
 
@@ -434,4 +435,72 @@ select {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.selectable-setting {
+  --horizontal-padding: 16px;
+  --vertical-padding: 4px;
+  background-color: transparent;
+  position: relative;
+  transition: 0.25s ease;
+}
+
+.selectable-setting::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: calc(100% + calc(var(--horizontal-padding) * 2));
+  height: calc(100% + calc(var(--vertical-padding) * 2));
+  transform: translate(calc(var(--horizontal-padding) * -1), calc(var(--vertical-padding) * -1));
+  background-color: rgba(255,255,255,0);
+  transition: 0.25s ease;
+}
+
+.selectable-setting-selected::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(100% + calc(var(--horizontal-padding) * 2));
+  height: calc(100% + calc(var(--vertical-padding) * 2));
+  transform: translate(-50%, -50%);
+  transform-origin: top left;
+  background-color: transparent;
+  box-sizing: border-box;
+  transition: 0.25s ease;
+  animation: pulseSelected 3s linear 0s infinite normal both running;
+}
+
+@keyframes pulseSelected {
+  0%   {background-color: rgba(255,255,255,1); animation-timing-function: cubic-bezier(0, 0.75, 0.7, 0.7); transform: translate(-50%, -50%); opacity: 0; height: 1em;}
+  50%  {background-color: rgba(255,255,255,0.125); animation-timing-function: cubic-bezier(0.3, 0.3, 0.25, 1); transform: translate(-50%, -50%); height: calc(calc(100% + calc(var(--vertical-padding) * 2)) - 10%);}
+  75%  {background-color: rgba(255,255,255,0); animation-timing-function: linear; transform: translate(-50%, -50%); height: calc(100% + calc(var(--vertical-padding) * 2));}
+  100% {background-color: rgba(255,255,255,0); animation-timing-function: linear; transform: translate(-50%, -50%); height: calc(100% + calc(var(--vertical-padding) * 2));}
+}
+
+.selectable-setting:hover::after {
+  background-color: rgba(255,255,255,0.25);
+}
+
+#editor-force-options > .editor-block-group > label:hover > .playlist-checkbox > div {
+  width: 10px;
+  height: 10px;
+}
+
+#editor-force-options > .editor-block-group > label:hover > .playlist-checkbox {
+  background-color: rgba(255,255,255,1);
+  border: 1px solid rgba(255,255,255,1);
+}
+
+#editor-force-options > .editor-block-group > label > input[type="checkbox"]:checked ~ .playlist-checkbox > div {
+  width: 0px;
+  height: 0px;
+}
+
+#editor-force-options > .editor-block-group > label > input[type="checkbox"]:checked ~ .playlist-checkbox {
+  border: 1px solid rgba(255,255,255,1);
+  background-color: rgba(255,255,255,1);
 }

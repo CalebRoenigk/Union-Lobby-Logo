@@ -6,10 +6,11 @@ function preload() {
   sceneManager = new SceneManager();
 
   // TODO: ADD SCENES TO THE SCENE MANAGER
+  // TODO: REMOVE COMMENTING OUT BELOW, USED TO MODIFY CSS LOCALLY WITHOUT FAILING JS DUE TO CORS
   sceneManager.scenes.push(new LogoScene());
 
   // Run the scene manager preload operation
-  sceneManager.preload();
+  // sceneManager.preload();
 }
 
 function setup() {
@@ -251,7 +252,6 @@ let sceneManager;
 let localStorageSettingsKey = 'p5jsLobbySettings';
 let clearSettingState = 0;
 
-// TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor
 // TODO: Add a force null grid option so that the null grid can be displayed when setting up the mask!
 // TODO: Refactor to remove any remaining warnings in Rider
 // TODO: Check that options saving works
@@ -277,7 +277,7 @@ function startup() {
 
   // Event Listeners
   document.querySelectorAll('input').forEach(element => {
-    if(element.id !== 'editor-force-clear-settings') {
+    if(element.id !== 'editor-force-clear-settings' && element.id !== 'editor-force-null-grid') {
       element.addEventListener('input', saveSettings);
     }
   });
@@ -463,6 +463,19 @@ function formatTimeAMPM(date) {
   return hours + ':' + minutes + ' ' + ampm; // The time as a string
 }
 
+// Updates the scene manager with setting from the editor on the force null grid
+function updateForceNullGrid() {
+  let forceNullGrid = document.getElementById('editor-force-null-grid').checked;
+  
+  if(forceNullGrid) {
+    document.querySelector('label[for="editor-force-null-grid"]').classList.add('selectable-setting-selected');
+  } else {
+    document.querySelector('label[for="editor-force-null-grid"]').classList.remove('selectable-setting-selected');
+  }
+  
+  sceneManager.forceNullGrid(forceNullGrid);
+}
+
 // Attempts to clear the editor settings
 function clearEditorSettings() {
   clearSettingState++;
@@ -470,7 +483,6 @@ function clearEditorSettings() {
   
   if(clearSettingState > 1) {
     // Clear settings has been confirmed, clear and reload the page
-    console.log('clearing the settings');
     factoryResetSettings(true);
   } else if(clearSettingState <= 0) {
     // The settings should be reset to the default value
@@ -684,6 +696,9 @@ class SceneManager {
     this.activeScene = null;
     this.sceneTimer = duration;
     this.transitionDuration = 0;
+    
+    // Debug/Editor
+    this.forceNullGridDisplay = false;
 
     // Null Scene
     this.nullScene = new NullScene();
@@ -708,38 +723,44 @@ class SceneManager {
 
   // Acts like the standard sketch draw function
   draw() {
-    // Scene timer
-    this.sceneTimer -= (deltaTime/1000);
+    // Only run scene timer and transitions if not forcing null grid display
+    if(!this.forceNullGridDisplay) {
+      // Scene timer
+      this.sceneTimer -= (deltaTime/1000);
 
-    if(this.sceneTimer <= 0) {
-      this.sceneTimer = this.duration;
-      this.updateSceneSettings();
-      this.playNext();
-      this.updateEditorPanel();
-      this.resetModes();
-    }
-
-    if(this.activeScene == null) {
-      this.drawNull();
-    } else {
-      if(!this.activeScene.startupExectued) {
-        this.activeScene.setup();
+      if(this.sceneTimer <= 0) {
+        this.sceneTimer = this.duration;
+        this.updateSceneSettings();
+        this.playNext();
+        this.updateEditorPanel();
+        this.resetModes();
       }
-      this.activeScene.draw();
-    }
 
-    // Draw Transitions
-    if(this.sceneTimer >= this.duration - this.transitionDuration || this.sceneTimer <= this.transitionDuration) {
-      let transitionCompletion;
-      if(this.sceneTimer >= this.duration - this.transitionDuration) {
-        // Opening transition in
-        transitionCompletion = (this.sceneTimer - (this.duration - this.transitionDuration)) / this.transitionDuration;
+      if(this.activeScene == null) {
+        this.drawNull();
       } else {
-        // Closing transition out
-        transitionCompletion = 1 - (this.sceneTimer / this.transitionDuration);
+        if(!this.activeScene.startupExectued) {
+          this.activeScene.setup();
+        }
+        this.activeScene.draw();
       }
 
-      this.transition(transitionCompletion);
+      // Draw Transitions
+      if(this.sceneTimer >= this.duration - this.transitionDuration || this.sceneTimer <= this.transitionDuration) {
+        let transitionCompletion;
+        if(this.sceneTimer >= this.duration - this.transitionDuration) {
+          // Opening transition in
+          transitionCompletion = (this.sceneTimer - (this.duration - this.transitionDuration)) / this.transitionDuration;
+        } else {
+          // Closing transition out
+          transitionCompletion = 1 - (this.sceneTimer / this.transitionDuration);
+        }
+
+        this.transition(transitionCompletion);
+      }
+    } else {
+      // Force a display the null grid
+      this.drawNull();
     }
 
     // Draw the mask
@@ -934,6 +955,11 @@ class SceneManager {
     // Update the scene title
     console.log("updating Editor Panel");
     document.getElementById('editor-scene-title').textContent = this.activeScene.name;
+  }
+  
+  // Updates the state of the scene manager, toggling the force null grid option
+  forceNullGrid(state) {
+    this.forceNullGridDisplay = state;
   }
 }
 
