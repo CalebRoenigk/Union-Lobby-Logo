@@ -284,6 +284,8 @@ function startup() {
   document.querySelectorAll('select').forEach(element => {
     element.addEventListener('input', saveSettings);
     element.addEventListener('input', setSelection);
+    element.addEventListener('change', saveSettings);
+    element.addEventListener('change', setSelection);
   });
 }
 
@@ -738,47 +740,6 @@ class SceneManager {
     }
 
     return this.activeScene;
-    
-    // // OLD
-    // console.log('playing next!');
-    // // Get the scene index of the active scene
-    // let activeIndex = this.findSceneIndex(this.activeScene);
-    // if(this.activeScene !== null) {
-    //   this.activeScene.startupExectued = false;
-    // }
-    //
-    // if(activeIndex === -1) {
-    //   this.activeScene = null;
-    //   // console.log('Active Scene not found...');
-    //   if(this.getActiveSceneCount() > 0) {
-    //     activeIndex = 0;
-    //   } else {
-    //     return null;
-    //   }
-    // }
-    //
-    // console.log('precheck on active index: ' + activeIndex);
-    // if(activeIndex >= this.scenes.length) {
-    //   activeIndex = 0;
-    // } else {
-    //   activeIndex++;
-    // }
-    //
-    // console.log('sceneLength: ' + this.scenes.length + ' active index: ' + activeIndex);
-    //
-    // for(let i=activeIndex; i < this.scenes.length; i++) {
-    //   // Find the first scene that is enabled
-    //   console.log('checking scene: ' + i + ' for enabled state');
-    //   if(this.scenes[i].enabled) {
-    //     this.activeScene = this.scenes[i];
-    //     this.activeScene.startupExectued = false;
-    //     return i;
-    //   }
-    // }
-    //
-    // this.activeScene = null;
-    // console.log('Active Scene not selectable...');
-    // return null;
   }
 
   // Returns the index of the passed scene
@@ -1180,6 +1141,9 @@ class MaskPoint {
     if(this.isDragging) {
       // The mouse is within the dragging area
       this.position = createVector(mouseX, mouseY);
+      
+      // Clamp the position of the mask point to within the canvas
+      this.clampPosition();
     } else {
       return null;
     }
@@ -1193,6 +1157,18 @@ class MaskPoint {
   // Sets the dragging state
   setDrag(state) {
     this.isDragging = state;
+
+    // Clamp the position of the mask point to within the canvas
+    this.clampPosition();
+  }
+  
+  // Clamps the position of point to within the canvas
+  clampPosition() {
+    // Primary Position
+    let posX = mathUtil.clamp(this.position.x, 0, width);
+    let posY = mathUtil.clamp(this.position.y, 0, height);
+    
+    this.position = createVector(posX, posY);
   }
 }
 
@@ -1264,6 +1240,9 @@ class MaskCurve extends MaskPoint {
           break;
       }
       this.position = createVector(mouseX, mouseY);
+
+      // Clamp the position of the mask point to within the canvas
+      this.clampPosition();
     } else {
       return null;
     }
@@ -1290,6 +1269,43 @@ class MaskCurve extends MaskPoint {
   setDrag(state) {
     super.setDrag(state);
     this.draggingIndex = state?this.draggingIndex:-1;
+
+    // Clamp the position of the mask point to within the canvas
+    this.clampPosition();
+  }
+
+  // Clamps the position of point to within the canvas
+  clampPosition() {
+    // Primary Position
+    let posX = mathUtil.clamp(this.position.x, 0, width);
+    let posY = mathUtil.clamp(this.position.y, 0, height);
+
+    this.position = createVector(posX, posY);
+    
+    // All sub points
+    // Start
+    let startX = mathUtil.clamp(this.start.x, 0, width);
+    let startY = mathUtil.clamp(this.start.y, 0, height);
+
+    this.start = createVector(startX, startY);
+    
+    // Start Control
+    let startControlX = mathUtil.clamp(this.startControl.x, 0, width);
+    let startControlY = mathUtil.clamp(this.startControl.y, 0, height);
+
+    this.startControl = createVector(startControlX, startControlY);
+
+    // End Control
+    let endControlX = mathUtil.clamp(this.endControl.x, 0, width);
+    let endControlY = mathUtil.clamp(this.endControl.y, 0, height);
+
+    this.endControl = createVector(endControlX, endControlY);
+    
+    // End
+    let endX = mathUtil.clamp(this.end.x, 0, width);
+    let endY = mathUtil.clamp(this.end.y, 0, height);
+
+    this.end = createVector(endX, endY);
   }
 }
 
