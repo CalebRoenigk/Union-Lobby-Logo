@@ -252,10 +252,10 @@ let sceneManager;
 let localStorageSettingsKey = 'p5jsLobbySettings';
 let clearSettingState = 0;
 
-// TODO: Add a force null grid option so that the null grid can be displayed when setting up the mask!
 // TODO: Refactor to remove any remaining warnings in Rider
 // TODO: Check that options saving works
 // TODO: POTENTIALLY SCALE THE CANVAS UP TO 900px Square, or even 1000px, the machine can probs handle it
+// TODO: Mark transition times in the scene timeline, also check that the transition times happen at the correct moments
 
 // Startup function
 function startup() {
@@ -708,6 +708,8 @@ class SceneManager {
     
     // Private Settings
     this.minimumTransitionTime = 1.5; // 1.5s minimum transition time
+    this.preloadComplete = false;
+    this.firstDrawComplete = false;
     
     this.calculateTransitionTime();
   }
@@ -719,10 +721,18 @@ class SceneManager {
       console.log('preloading scene: ' + i + ' scene name: ' + this.scenes[i].name);
       this.scenes[i].preload();
     }
+
+    this.preloadComplete = true;
   }
 
   // Acts like the standard sketch draw function
   draw() {
+    // Mark first draw
+    if(!this.firstDrawComplete) {
+      this.firstDrawComplete = true;
+      this.updateEditorPanel();
+    }
+    
     // Only run scene timer and transitions if not forcing null grid display
     if(!this.forceNullGridDisplay) {
       // Scene timer
@@ -778,7 +788,6 @@ class SceneManager {
   // Plays the next enabled scene
   playNext() {
     console.log('play next!'); // TODO: REMOVE THIS PRINT WHEN SCENE MANAGER IS CONSIDERED FINISHED
-    // TODO: STEPS BELOW
     // Get an array of enabled playlist scenes
     let activeScenes = this.getActiveScenes();
 
@@ -954,7 +963,14 @@ class SceneManager {
   updateEditorPanel() {
     // Update the scene title
     console.log("updating Editor Panel");
-    document.getElementById('editor-scene-title').textContent = this.activeScene.name;
+    let sceneName;
+    if(this.activeScene === null || this.activeScene === undefined) {
+      sceneName = 'Null Grid';
+    } else {
+      sceneName = this.activeScene.name;
+    }
+    
+    document.getElementById('editor-scene-title').textContent = sceneName;
   }
   
   // Updates the state of the scene manager, toggling the force null grid option
