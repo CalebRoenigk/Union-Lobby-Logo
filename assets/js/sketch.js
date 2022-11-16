@@ -6,11 +6,13 @@ function preload() {
   sceneManager = new SceneManager();
 
   // TODO: ADD SCENES TO THE SCENE MANAGER
-  // TODO: REMOVE COMMENTING OUT BELOW, USED TO MODIFY CSS LOCALLY WITHOUT FAILING JS DUE TO CORS
   sceneManager.scenes.push(new LogoScene());
 
   // Run the scene manager preload operation
-  // sceneManager.preload();
+  // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
+  if(window.location.href === 'https://calebroenigk.github.io/Union-Lobby-Logo/') {
+    sceneManager.preload();
+  }
 }
 
 function setup() {
