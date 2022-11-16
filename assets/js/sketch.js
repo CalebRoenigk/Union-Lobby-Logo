@@ -656,6 +656,7 @@ class SceneManager {
       this.sceneTimer = this.duration;
       this.updateSceneSettings();
       this.playNext();
+      this.updateEditorPanel();
       this.resetModes();
     }
 
@@ -695,9 +696,8 @@ class SceneManager {
   }
 
   // Plays the next enabled scene
-  // TODO: REFACTOR THIS CAUSE IT FUCKING BLOWS
   playNext() {
-    console.log('play next!');
+    console.log('play next!'); // TODO: REMOVE THIS PRINT WHEN SCENE MANAGER IS CONSIDERED FINISHED
     // TODO: STEPS BELOW
     // Get an array of enabled playlist scenes
     let activeScenes = this.getActiveScenes();
@@ -869,6 +869,12 @@ class SceneManager {
   // Returns the minimum scene duration time
   getMinimumSceneDuration() {
     return this.minimumTransitionTime * 2 + 1;
+  }
+  
+  // Updates the editor panel
+  updateEditorPanel() {
+    // Update the scene title
+    document.getElementById('editor-scene-title').textContent = this.activeScene.name;
   }
 }
 

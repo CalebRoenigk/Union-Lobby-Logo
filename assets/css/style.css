@@ -1,3 +1,6 @@
+/* TODO: ORGANIZE THIS CSS SO THAT IT IS GROUPED BY AREA IN THE HTML */
+/* TODO: ORGANIZE EACH SELECTOR SO THAT ALL PROPS ARE ALPHABETICAL */
+
 body {
   width: 100vw;
   height: 100vh;
@@ -141,6 +144,10 @@ label, h2 {
   justify-content: flex-start;
   align-items: stretch;
   margin-top: 8px;
+}
+
+#editor-scene-title {
+  text-transform: capitalize;
 }
 
 .editor-selector > .editor-selector {
