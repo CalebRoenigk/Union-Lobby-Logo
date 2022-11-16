@@ -248,10 +248,12 @@ let mathUtil = new MathUtil();
 let easeUtil = new EaseUtil();
 let p5Util = new P5Util();
 let sceneManager;
+let localStorageSettingsKey = 'p5jsLobbySettings';
+let clearSettingState = 0;
 
 // TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor
-// TODO: Refactor to remove any remaining warnings in Rider
 // TODO: Add a force null grid option so that the null grid can be displayed when setting up the mask!
+// TODO: Refactor to remove any remaining warnings in Rider
 // TODO: Check that options saving works
 // TODO: POTENTIALLY SCALE THE CANVAS UP TO 900px Square, or even 1000px, the machine can probs handle it
 
@@ -275,7 +277,9 @@ function startup() {
 
   // Event Listeners
   document.querySelectorAll('input').forEach(element => {
-    element.addEventListener('input', saveSettings);
+    if(element.id !== 'editor-force-clear-settings') {
+      element.addEventListener('input', saveSettings);
+    }
   });
   document.getElementById('editor-scenetime').addEventListener('change', validateSceneDuration);
   
@@ -288,24 +292,28 @@ function startup() {
 }
 
 function updateEditorState() {
-    if(editorState) {
-      // Open Editor
-      document.getElementById('editor-panel').classList.remove('editor-collapsed');
-      document.getElementById('canvas-position-marker').classList.remove('canvas-position-marker-hidden');
-      if(document.querySelector('canvas') !== null) {
-        document.querySelector('canvas').classList.add('canvas-indicator-visible');
-      }
-      document.querySelector('body').classList.remove('hide-cursor');
-    } else {
-      // Close Editor
-      document.getElementById('editor-panel').classList.add('editor-collapsed');
-      document.getElementById('canvas-position-marker').classList.add('canvas-position-marker-hidden');
-      if(document.querySelector('canvas') !== null) {
-        document.querySelector('canvas').classList.remove('canvas-indicator-visible');
-      }
-      document.querySelector('body').classList.add('hide-cursor');
+  // Regardless of the editor state toggling the state will reset the clear settings counter
+  clearSettingState = -1;
+  clearEditorSettings();
+  
+  if(editorState) {
+    // Open Editor
+    document.getElementById('editor-panel').classList.remove('editor-collapsed');
+    document.getElementById('canvas-position-marker').classList.remove('canvas-position-marker-hidden');
+    if(document.querySelector('canvas') !== null) {
+      document.querySelector('canvas').classList.add('canvas-indicator-visible');
     }
- }
+    document.querySelector('body').classList.remove('hide-cursor');
+  } else {
+    // Close Editor
+    document.getElementById('editor-panel').classList.add('editor-collapsed');
+    document.getElementById('canvas-position-marker').classList.add('canvas-position-marker-hidden');
+    if(document.querySelector('canvas') !== null) {
+      document.querySelector('canvas').classList.remove('canvas-indicator-visible');
+    }
+    document.querySelector('body').classList.add('hide-cursor');
+  }
+}
 
 // Generates the playlist for all scenes in the p5js sketch
 function generatePlaylist(scenes) {
@@ -455,6 +463,38 @@ function formatTimeAMPM(date) {
   return hours + ':' + minutes + ' ' + ampm; // The time as a string
 }
 
+// Attempts to clear the editor settings
+function clearEditorSettings() {
+  clearSettingState++;
+  let clearSettingsButton = document.getElementById('editor-force-clear-settings');
+  
+  if(clearSettingState > 1) {
+    // Clear settings has been confirmed, clear and reload the page
+    console.log('clearing the settings');
+    factoryResetSettings(true);
+  } else if(clearSettingState <= 0) {
+    // The settings should be reset to the default value
+    clearSettingsButton.classList.add('button');
+    clearSettingsButton.classList.remove('danger-button');
+    clearSettingsButton.value = "Force Clear Settings";
+  } else {
+    // Clear settings must be confirmed, style the button
+    clearSettingsButton.classList.remove('button');
+    clearSettingsButton.classList.add('danger-button');
+    clearSettingsButton.value = "Confirm Force Clear Settings";
+  }
+}
+
+// Clears the settings, has an option to force reload (true by default)
+function factoryResetSettings(forceWindowReload = true) {
+  editorSettings = null;
+  localStorage.removeItem(localStorageSettingsKey);
+  
+  if(forceWindowReload) {
+    forceReload();
+  }
+}
+
 // Force Reloads the page
 function forceReload() {
   window.location.reload();
@@ -462,8 +502,13 @@ function forceReload() {
 
 // Stores the settings in local storage, can be forced to skip pulling values from the editor panel, pulls values by default
 function saveSettings(forceUpdateSettings = true) {
+  // When saving settings, reset the clear settings counter, because this implies that another button has been changed outside of a confirmation
+  console.log('saving settings');
+  clearSettingState = -1;
+  clearEditorSettings();
+  
   // Storage name
-  let name = 'p5jsLobbySettings';
+  let name = localStorageSettingsKey;
 
   // Storage Data
   let sceneDuration = editorSettings.sceneDuration;
@@ -529,7 +574,7 @@ function getPlaylistSettings() {
 // Loads the settings from local storage and updates the editor panel to reflect them
 function loadSettings() {
   // Storage name
-  let name = 'p5jsLobbySettings';
+  let name = localStorageSettingsKey;
 
   // Load the settings
   let settings;
@@ -998,11 +1043,18 @@ class MaskEditor {
   
   // Drops all mask points
   drop() {
+    let modifiedMaskEditor = false;
     this.masks.forEach(mask => {
-      mask.drop();
+      let modifiedMask = mask.drop();
+      if(modifiedMask) {
+        modifiedMaskEditor = true;
+      }
     })
-
-    saveSettings();
+    
+    // Save the settings if the mask has been modified
+    if(modifiedMaskEditor) {
+      saveSettings();
+    }
   }
   
   // Returns the mask settings for all masks
@@ -1132,9 +1184,16 @@ class Mask {
   
   // Drops any dragging points
   drop() {
+    let modifiedMask = false;
     for(let i=0; i < this.points.length; i++) {
-      this.points[i].setDrag(false);
+      let modifiedPoint = this.points[i].setDrag(false);
+      
+      if(modifiedPoint) {
+        modifiedMask = true;
+      }
     }
+    
+    return modifiedMask;
   }
 }
 
@@ -1175,10 +1234,14 @@ class MaskPoint {
   
   // Sets the dragging state
   setDrag(state) {
+    // Store a true return value if the point was being dragged (modified)
+    let wasModified = this.isDragging;
     this.isDragging = state;
 
     // Clamp the position of the mask point to within the canvas
     this.clampPosition();
+    
+    return wasModified;
   }
   
   // Clamps the position of point to within the canvas

@@ -5,7 +5,7 @@
     <title>Valtech - P5JS Lobby Editor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,200;0,400;0,700;1,200;1,400;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./assets/css/style.css">
     <script src="./assets/js/p5.js"></script>
   </head>
@@ -14,33 +14,41 @@
     <div id="editor-panel">
       <div id="editor-actions">
         <div id="editor-header" class="editor-block">
-        <h1 id="editor-scene-title">Strings</h1>
-        <div id="editor-playback-timeline" style="--playback-scale: 0%;"></div>
-        <div id="editor-scenetime-selector" class="editor-selector">
-          <label for="editor-scenetime">Scene Duration: </label><input type="number" id="editor-scenetime" value="60">
+          <h1 id="editor-scene-title">Strings</h1>
+          <div id="editor-playback-timeline" style="--playback-scale: 0%;"></div>
+          <div id="editor-scenetime-selector" class="editor-selector">
+            <label for="editor-scenetime">Scene Duration: </label><input type="number" id="editor-scenetime" value="60">
+          </div>
         </div>
-      </div>
-      <div id="editor-playlist" class="editor-block">
-        <div id="editor-playlist-container">
-          <ul id="editor-playlist-list">
-          </ul>
+        <div id="editor-playlist" class="editor-block">
+          <div id="editor-playlist-container">
+            <ul id="editor-playlist-list">
+            </ul>
+          </div>
         </div>
-      </div>
-      <div id="editor-refresh" class="editor-block">
-        <h4>Next page reload in <span id="editor-reload-timer" class="text-bold">--hrs --mins</span> or you can force a refresh right now with the button below.</h4>
-        <input type="button" value="Force Refresh" class="button" onclick="forceReload()"></input>
-      </div>
-      <div id="editor-canvas" class="editor-block">
-        <h2>Canvas Position:</h2>
-        <div class="editor-selector">
-          <div id="editor-canvas-selector-x" class="editor-selector">
-          <label for="editor-canvas-x">X:</label><input type="number" id="editor-canvas-x" value="200" oninput="updateCanvasPosition()">
+        <div id="editor-refresh" class="editor-block">
+          <h4>Next page reload in <span id="editor-reload-timer" class="text-bold">--hrs --mins</span> or you can force a refresh right now with the button below.</h4>
+          <input type="button" value="Force Refresh" class="button" onclick="forceReload()"></input>
         </div>
-          <div id="editor-canvas-selector-y" class="editor-selector">
-          <label for="editor-canvas-y">Y:</label><input type="number" id="editor-canvas-y" value="200" oninput="updateCanvasPosition()">
+        <div id="editor-canvas" class="editor-block">
+          <h2>Canvas Position:</h2>
+          <div class="editor-selector">
+            <div id="editor-canvas-selector-x" class="editor-selector">
+            <label for="editor-canvas-x">X:</label><input type="number" id="editor-canvas-x" value="200" oninput="updateCanvasPosition()">
+          </div>
+            <div id="editor-canvas-selector-y" class="editor-selector">
+            <label for="editor-canvas-y">Y:</label><input type="number" id="editor-canvas-y" value="200" oninput="updateCanvasPosition()">
+          </div>
+          </div>
         </div>
+<!--        TODO: Add A FORCE RESET Button to the UI to force clear the stored settings for the editor-->
+<!--        TODO: Add a force null grid option so that the null grid can be displayed when setting up the mask!-->
+        <div id="editor-force-options" class="editor-block force-flex-wrap">
+          <div class="editor-block-group">
+            <input type="button" value="Force Clear Settings" id="editor-force-clear-settings" class="button" onclick="clearEditorSettings()"></input>
+            <h4>This button factory resets <span class="text-italics text-underline">all editor settings</span> and forces a page reload.</h4>
+          </div>
         </div>
-      </div>
       </div>
       <div id="editor-prompt" class="editor-block">
         <h3>It's currently <span id="editor-clock">--:--am</span></h3>
