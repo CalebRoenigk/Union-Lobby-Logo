@@ -452,8 +452,7 @@ function formatTimeAMPM(date) {
   hours = hours % 12;
   hours = hours ? hours : 12; // the hour '0' should be '12'
   minutes = minutes < 10 ? '0'+minutes : minutes;
-  var strTime = hours + ':' + minutes + ' ' + ampm;
-  return strTime;
+  return hours + ':' + minutes + ' ' + ampm; // The time as a string
 }
 
 // Force Reloads the page
@@ -533,7 +532,7 @@ function loadSettings() {
   let name = 'p5jsLobbySettings';
 
   // Load the settings
-  let settings = {};
+  let settings;
   if(localStorage.getItem(name) == null) {
     sceneManager.maskEditor.setMaskSettings(null);
     settings = {
@@ -645,10 +644,9 @@ class SceneManager {
     this.nullScene = new NullScene();
     
     // Mask Editor
-    let mask1 = new Mask()
     this.maskEditor = new MaskEditor();
     
-    // Privte Settings
+    // Private Settings
     this.minimumTransitionTime = 1.5; // 1.5s minimum transition time
     
     this.calculateTransitionTime();
@@ -658,7 +656,7 @@ class SceneManager {
   preload() {
     // Iterate over each scene and run its preload function
     for(let i=0; i < this.scenes.length; i++) {
-      console.log('preloading scene: ' + i + ' scenename: ' + this.scenes[i].name);
+      console.log('preloading scene: ' + i + ' scene name: ' + this.scenes[i].name);
       this.scenes[i].preload();
     }
   }
@@ -687,7 +685,7 @@ class SceneManager {
 
     // Draw Transitions
     if(this.sceneTimer >= this.duration - this.transitionDuration || this.sceneTimer <= this.transitionDuration) {
-      let transitionCompletion = 0;
+      let transitionCompletion;
       if(this.sceneTimer >= this.duration - this.transitionDuration) {
         // Opening transition in
         transitionCompletion = (this.sceneTimer - (this.duration - this.transitionDuration)) / this.transitionDuration;
@@ -764,7 +762,7 @@ class SceneManager {
     }
     
     for(let i=0; i < this.scenes.length; i++) {
-      if(this.scenes[i].name == scene.name) {
+      if(this.scenes[i].name === scene.name) {
         return i;
       }
     }
@@ -871,7 +869,6 @@ class SceneManager {
     
     this.duration = duration;
     this.sceneTimer = duration;
-    this.transitionDuration = this.calculateTransitionTime();
   }
   
   // Calculates the transition duration from the duration
@@ -1046,7 +1043,7 @@ class MaskEditor {
       maskSettings.masks.forEach(mask => {
         let points = [];
         mask.points.forEach(point => {
-          let p = '';
+          let p;
           if(point.type === 'V') {
             // Vertex
             p = new MaskVertex(p5Util.stringToVector(point.position));
