@@ -162,7 +162,35 @@ h4 {
   content: '';
   transform-origin: left center;
   transform: scaleX(var(--playback-scale));
-  transition: 1s linear;
+  transition: 0.25s linear;
+}
+
+#editor-playback-timeline > .container {
+  z-index: 200;
+}
+
+#editor-playback-timeline > .container::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: var(--transitionLength);
+  height: 100%;
+  background-color: black;
+  opacity: 0.5;
+}
+
+#editor-playback-timeline > .container::after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: var(--transitionLength);
+  height: 100%;
+  background-color: black;
+  opacity: 0.5;
 }
 
 label, h2 {

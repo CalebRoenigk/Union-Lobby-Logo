@@ -56,6 +56,17 @@ class MathUtil {
   clamp(value, minimum, maximum) {
     return min(max(value,minimum), maximum);
   }
+  
+  // Normalizes a value within a min and max range, option to clamp the value that defaults to false
+  normalize(value, minimum, maximum, clamp = false) {
+    let normalized = (value - minimum) / (maximum - minimum);
+    
+    if(clamp) {
+      normalized = this.clamp(normalized, 0, 1);
+    }
+    
+    return normalized;
+  }
 }
 
 // Easing Utilities
@@ -255,14 +266,13 @@ let clearSettingState = 0;
 // TODO: Refactor to remove any remaining warnings in Rider
 // TODO: Check that options saving works
 // TODO: POTENTIALLY SCALE THE CANVAS UP TO 900px Square, or even 1000px, the machine can probs handle it
-// TODO: Mark transition times in the scene timeline, also check that the transition times happen at the correct moments
 
 // Startup function
 function startup() {
   // Set up editor toggle
   document.addEventListener('keydown', (event) => {
     let keycode = event.key;
-    if(keycode == '`' || keycode == '~') {
+    if(keycode === '`' || keycode === '~') {
       editorState = !editorState;
       updateEditorState();
     }
@@ -401,16 +411,6 @@ function updateCanvasPosition() {
   marker.setAttribute('style', '--top: ' + y + 'px;' + '--left: ' + x + 'px;');
 
   document.querySelector('canvas').setAttribute('style', '--top: ' + y + 'px;' + '--left: ' + x + 'px;');
-}
-
-// Updates the playhead of the timeline
-function updateEditorPlayback() {
-  let date = new Date();
-
-  let complete = Math.round((date.getSeconds() / 60) * 100);
-
-  let editorTimelineNode = document.getElementById('editor-playback-timeline');
-  editorTimelineNode.setAttribute('style', '--playback-scale: ' + complete + '%;');
 }
 
 // Updates all the clocks and timers in the editor panel
@@ -658,13 +658,15 @@ function setSelection(event) {
   }
 }
 
-// Validates data for the scene duration input
+// Validates data for the scene duration input and then updates the scene manager
 function validateSceneDuration() {
   let sceneDurationInput = document.getElementById('editor-scenetime');
   let minimumSceneDuration = sceneManager.getMinimumSceneDuration();
-  if(sceneDurationInput.value < minimumSceneDuration) {
+  if(Number(sceneDurationInput.value) < minimumSceneDuration) {
     sceneDurationInput.value = minimumSceneDuration;
   }
+
+  sceneManager.setDuration(Number(sceneDurationInput.value));
 }
 
 // Mask Editor Dragging dectections
@@ -695,7 +697,6 @@ class SceneManager {
 
     this.activeScene = null;
     this.sceneTimer = duration;
-    this.transitionDuration = 0;
     
     // Debug/Editor
     this.forceNullGridDisplay = false;
@@ -710,8 +711,7 @@ class SceneManager {
     this.minimumTransitionTime = 1.5; // 1.5s minimum transition time
     this.preloadComplete = false;
     this.firstDrawComplete = false;
-    
-    this.calculateTransitionTime();
+    this.transitionSettings = new TransitionSettings(this.calculateTransitionTime(), this.duration);
   }
 
   // Acts like the standard sketch preload function
@@ -747,30 +747,27 @@ class SceneManager {
       }
 
       if(this.activeScene == null) {
-        this.drawNull();
+        this.#drawNull();
       } else {
         if(!this.activeScene.startupExectued) {
           this.activeScene.setup();
         }
         this.activeScene.draw();
       }
-
-      // Draw Transitions
-      if(this.sceneTimer >= this.duration - this.transitionDuration || this.sceneTimer <= this.transitionDuration) {
-        let transitionCompletion;
-        if(this.sceneTimer >= this.duration - this.transitionDuration) {
-          // Opening transition in
-          transitionCompletion = (this.sceneTimer - (this.duration - this.transitionDuration)) / this.transitionDuration;
-        } else {
-          // Closing transition out
-          transitionCompletion = 1 - (this.sceneTimer / this.transitionDuration);
-        }
-
-        this.transition(transitionCompletion);
+      
+      // Draw Transition
+      let timeInScene = this.duration - this.sceneTimer;
+      let transitionRange = this.transitionSettings.timeWithinRange(timeInScene);
+      let transitionValue = 1;
+      if(transitionRange !== null && transitionRange !== undefined) {
+        // The scene is within a transition
+        transitionValue = this.transitionSettings.getNormalizedTransitionTime(timeInScene, transitionRange);
       }
+
+      this.transition(transitionValue);
     } else {
       // Force a display the null grid
-      this.drawNull();
+      this.#drawNull();
     }
 
     // Draw the mask
@@ -782,7 +779,7 @@ class SceneManager {
   
   // Returns the playback time as a percentage
   getPlaybackPercent() {
-    return 100 - round((this.sceneTimer / this.duration) * 100);
+    return 100 - (round(((this.sceneTimer / this.duration) * 100)*10)/10);
   }
 
   // Plays the next enabled scene
@@ -855,21 +852,16 @@ class SceneManager {
     
     return activeScenes;
   }
-  
-  // Returns the count of active scenes in the playlist
-  getActiveSceneCount() {
-    return this.getActiveScenes().length;
-  }
 
   // Draws a 'null' scene
-  drawNull() {
+  #drawNull() {
     this.nullScene.draw();
   }
 
   // Draws the transition
   transition(completion) {
     let transitionColor = color(0,0,0);
-    let transitionCompletion = mathUtil.clamp(easeUtil.easeOutQuad(completion), 0, 1);
+    let transitionCompletion = 1 - mathUtil.clamp(easeUtil.easeOutQuad(completion), 0, 1);
 
     transitionColor.setAlpha(transitionCompletion * 255);
 
@@ -934,16 +926,16 @@ class SceneManager {
         }
       }
     });
-
-    this.transitionDuration = this.duration / 20;
   }
   
   // Sets the duration to a value and recalculates all settings reliant on this value
   setDuration(duration) {
     duration = Math.max(this.getMinimumSceneDuration(), duration); // The duration cannot be less than twice the minimum transition time + 1 second
-    
     this.duration = duration;
     this.sceneTimer = duration;
+    this.transitionSettings.recalculateTransitions(this.calculateTransitionTime(), this.duration);
+    let transitionPercentage = this.transitionSettings.getTransitionDurationPercentage();
+    document.getElementById('editor-playback-timeline-transition-markers').setAttribute('style', '--transitionLength: ' + transitionPercentage + '%');
   }
   
   // Calculates the transition duration from the duration
@@ -951,7 +943,7 @@ class SceneManager {
     let transitionTime = this.duration / 20; // A tenth of the total duration on either end of each scene
     transitionTime = Math.max(transitionTime, this.minimumTransitionTime); // The transition time can be no less than the minimum transition time
     
-    this.transitionDuration = transitionTime;
+    return transitionTime;
   }
   
   // Returns the minimum scene duration time
@@ -962,7 +954,6 @@ class SceneManager {
   // Updates the editor panel
   updateEditorPanel() {
     // Update the scene title
-    console.log("updating Editor Panel");
     let sceneName;
     if(this.activeScene === null || this.activeScene === undefined) {
       sceneName = 'Null Grid';
@@ -1037,6 +1028,84 @@ class SceneOptions {
     }
 
     return this.values.findIndex(this.selected);
+  }
+}
+
+// Settings for the transition
+class TransitionSettings {
+  constructor(transitionDuration, duration) {
+    this.duration = duration; // Duration of the scene
+    this.transitionDuration = transitionDuration;
+
+    this.inStart = 0; // When the transition into a scene starts
+    this.inEnd = 0; // When the transition into a scene ends
+    this.outStart = 0; // When the transition out of a scene starts
+    this.outEnd = 0; // When the transition out of a scene ends
+    
+    this.calculateInOut();
+  }
+  
+  // Calculates the start and ends for the in and out transitions
+  calculateInOut() {
+    // Transition In
+    this.inStart = 0;
+    this.inEnd = this.transitionDuration;
+
+    // Transition Out
+    this.outStart = this.duration - this.transitionDuration;
+    this.outEnd = this.duration;
+  }
+  
+  // Returns true if the passed time is within the in transition (inclusive of start and end times)
+  #withinInRange(time) {
+    return time <= this.inEnd; // Any time less than inEnd is within the in transition (this accounts for possible negative numbers passed in)
+  }
+
+  // Returns true if the passed time is within the out transition (inclusive of start and end times)
+  #withinOutRange(time) {
+    return time >= this.outStart; // Any time greater than outStart is within the out transition (this accounts for possible numbers larger than the transition out end)
+  }
+  
+  // Returns the range the time is within, null if it is not within a transition range
+  timeWithinRange(time) {
+    if(this.#withinInRange(time)) {
+      return 'IN';
+    } else {
+      if(this.#withinOutRange(time)) {
+        return 'OUT';
+      } else {
+        return null;
+      }
+    }
+  }
+  
+  // Returns a value from 0 to 1 that represents how far along a transition is given the current time and scene range selection
+  getNormalizedTransitionTime(time, range) {
+    // In Transition
+    if(range === 'IN') {
+      return mathUtil.normalize(time, this.inStart, this.inEnd, true);
+    }
+    
+    // Out Transition
+    if(range === 'OUT') {
+      return 1-mathUtil.normalize(time, this.outStart, this.outEnd, true);
+    }
+
+    // No Transition
+    return -1;
+  }
+  
+  // Updates the transitions with new values
+  recalculateTransitions(transitionDuration, duration) {
+    this.duration = duration; // Duration of the scene
+    this.transitionDuration = transitionDuration;
+
+    this.calculateInOut();
+  }
+  
+  // Returns the transition duration as a percentage of the overall scene duration, rounded to the nearest tenth
+  getTransitionDurationPercentage() {
+    return (round((this.transitionDuration/this.duration)*10)/10)*100;
   }
 }
 
