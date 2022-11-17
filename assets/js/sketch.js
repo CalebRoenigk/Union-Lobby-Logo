@@ -33,7 +33,7 @@ function setup() {
   loadSettings();
 
   // Force the scene manager to load the first scene
-  sceneManager.playNext(); // TODO: DETERMINE WHY THIS ISNT WORKING
+  sceneManager.playNext();
 }
 
 function draw() {
@@ -650,6 +650,7 @@ function loadSettings() {
     
     sceneManager.maskEditor.setMaskSettings(settings.maskSettings);
     sceneManager.setDuration(settings.sceneDuration);
+    sceneManager.updateSceneSettings();
   }
   editorSettings = settings;
   
