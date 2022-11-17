@@ -408,6 +408,9 @@ function playlistItemChanged(item) {
       element.setAttribute('style', 'color: inherit; border-color: inherit;');
     }
   });
+  
+  // Save the settings
+  saveSettings();
 }
 
 // Updates the position of the canvas and marker
@@ -1722,7 +1725,7 @@ class FunfettiSystem {
   }
 
   simulate() {
-    for(let i=0; i < this.particles.length; i++) {
+    for(let i=0; i < this.funfetti.length; i++) {
       this.funfetti[i].draw();
     }
 
