@@ -597,6 +597,7 @@ function getPlaylistSettings() {
 
 // Loads the settings from local storage and updates the editor panel to reflect them
 function loadSettings() {
+  console.log('loading settings');
   // Storage name
   let name = localStorageSettingsKey;
 
@@ -797,6 +798,7 @@ class SceneManager {
   // Plays the next enabled scene
   playNext() {
     console.log('play next!'); // TODO: REMOVE THIS PRINT WHEN SCENE MANAGER IS CONSIDERED FINISHED
+    console.log(this.scenes, this.scenes.filter(scene => scene.enabled));
     // Set the current active scene to startup not executed
     if(this.activeScene !== null && this.activeScene !== undefined) {
       this.activeScene.startupExectued = false;
@@ -860,14 +862,7 @@ class SceneManager {
   
   // Returns an array of all the active scenes
   getActiveScenes() {
-    let activeScenes = [];
-    this.scenes.forEach(scene => {
-      if(scene.enabled) {
-        activeScenes.push(scene);
-      }
-    });
-    
-    return activeScenes;
+    return this.scenes.filter(scene => scene.enabled);
   }
 
   // Draws a 'null' scene
