@@ -7,6 +7,7 @@ function preload() {
 
   // TODO: ADD SCENES TO THE SCENE MANAGER
   sceneManager.scenes.push(new LogoScene());
+  SceneManager.scenes.push(new FunfettiScene());
 
   // Run the scene manager preload operation
   // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
@@ -300,6 +301,12 @@ function startup() {
     element.addEventListener('input', setSelection);
     element.addEventListener('change', saveSettings);
     element.addEventListener('change', setSelection);
+  });
+  
+  // Special case for disabling confirm clear settings when force null is interacted with
+  document.getElementById('editor-force-null-grid-label').addEventListener('click', () => {
+    clearSettingState = -1;
+    clearEditorSettings();
   });
 }
 
@@ -787,6 +794,11 @@ class SceneManager {
   // Plays the next enabled scene
   playNext() {
     console.log('play next!'); // TODO: REMOVE THIS PRINT WHEN SCENE MANAGER IS CONSIDERED FINISHED
+    // Set the current active scene to startup not executed
+    if(this.activeScene !== null && this.activeScene !== undefined) {
+      this.activeScene.startupExectued = false;
+    }
+    
     // Get an array of enabled playlist scenes
     let activeScenes = this.getActiveScenes();
 
@@ -877,6 +889,10 @@ class SceneManager {
   resetModes() {
     colorMode(RGB, 255); // Color Mode
     imageMode(CORNER); // Image Draw Mode
+    angleMode(RADIANS); // Angle Interpretation Mode
+    drawingContext.fillStyle = null; // Drawing Context Fill
+    drawingContext.strokeStyle = null; // Drawing Context Stroke
+    ellipseMode(CENTER); // Ellipse Drawing Mode
   }
   
   // Returns a scene based on its name
@@ -1612,5 +1628,245 @@ class LogoScene extends LobbyScene {
         image(this.logos[this.options.getSelectedIndex()], pos.x, pos.y, spacing/2, spacing/2);
       }
     }
+  }
+}
+
+// Funfetti Scene
+class FunfettiScene extends LobbyScene {
+  constructor() {
+    super('Funfetti', new SceneOptions(false, [], 0));
+    this.particleCount = 128;
+    this.funfettiSystem = new FunfettiSystem(this.particleCount);
+  }
+  
+  setup() {
+    background(255);
+    this.funfettiSystem = new FunfettiSystem(this.particleCount);
+  }
+
+  draw() {
+    this.funfettiSystem.draw();
+  }
+}
+
+class FunfettiSystem {
+  constructor(count) {
+    this.count = count;
+
+    this.funfetti = [];
+
+    // Settings
+    this.funfettiSizeRange = createVector(2, 48);
+    this.funfettiSpeedRange = createVector(64, 768);
+
+    this.boundaryMargin = 128;
+  }
+
+  // Spawns a Funfetti
+  spawnFunfetti() {
+    let position = this.getRandomCanvasPoint();
+    let color = this.getFunfettiColor();
+    let size = this.getFunfettiSize();
+    let direction = this.getFunfettiDirection();
+    let speed = this.getFunfettiSpeed();
+
+    let funfettiType = round(random(0,2));
+    let funfetti;
+    switch(funfettiType) {
+      case 0:
+      default:
+        funfetti = new SquareFunfetti(position, color, size, direction, speed);
+        break;
+      case 1:
+        funfetti = new TriangleFunfetti(position, color, size, direction, speed);
+        break;
+      case 2:
+        funfetti = new CircleFunfetti(position, color, size, direction, speed);
+        break;
+    }
+
+    this.funfetti.push(funfetti);
+  }
+
+  // Returns a random point within the canvas
+  getRandomCanvasPoint() {
+    return createVector(random(0, width), random(0, height));
+  }
+
+  // Returns a random color
+  getFunfettiColor() {
+    colorMode(RGB);
+    let colors = [color(70,38,173), color(249,94,114), color(255,167,199), color(0,76,240), color(52,202,159), color(255,208,0), color(255,255,255), color(0,0,0), color(240,30,100), color(125,190,255)];
+
+    return colors[round(random(0, colors.length-1))];
+  }
+
+  // Returns a random size
+  getFunfettiSize() {
+    return random(this.funfettiSizeRange.x, this.funfettiSizeRange.y);
+  }
+
+  // Returns a random directional vector
+  getFunfettiDirection() {
+    return createVector(random(-1, 1), random(-1, 1));
+  }
+
+  // Returns a random speed
+  getFunfettiSpeed() {
+    return random(this.funfettiSpeedRange.x, this.funfettiSpeedRange.y);
+  }
+
+  // Returns true if the position is within the bounds
+  withinBounds(position) {
+    return position.x > -this.boundaryMargin && position.x < width + this.boundaryMargin && position.y > -this.boundaryMargin && position.y < height + this.boundaryMargin;
+  }
+
+  simulate() {
+    for(let i=0; i < this.particles.length; i++) {
+      this.funfetti[i].draw();
+    }
+
+    for(let i=this.funfetti.length-1; i > -1; i--) {
+      if(!this.withinBounds(this.funfetti[i].position)) {
+        this.funfetti.splice(i, 1);
+      }
+    }
+
+    if(this.funfetti.length < this.count) {
+      let funfettiSpawnCount = random(0, this.count - this.funfetti.length);
+      for(let j=0; j < funfettiSpawnCount; j++) {
+        this.spawnFunfetti();
+      }
+    }
+  }
+
+  draw() {
+    this.simulate();
+  }
+}
+
+class Funfetti {
+  constructor(position, color, size, direction, speed) {
+    this.position = position;
+    this.fill = color;
+    this.strokeDarken = random(0,40);
+    this.stroke = this.getStroke();
+    this.drawMode = max(min(round(randomGaussian(1,1)), 2),0);
+    this.size = size;
+    this.direction = direction.normalize();
+    this.speed = speed;
+
+    this.randomWander = 0.5;
+    this.maxWanderDeviation = 32;
+    this.strokeWeight = 2;
+  }
+
+  // Returns the stroke color
+  getStroke() {
+    colorMode(HSB);
+    return color(hue(this.fill), saturation(this.fill), brightness(this.fill) - this.strokeDarken);
+  }
+
+  simulate() {
+    let velocity = createVector(this.direction.x, this.direction.y).setMag((this.speed*(deltaTime/1000)));
+    this.position.add(velocity);
+
+    // Random chance to turn
+    if(random(0,1) > 1 - this.randomWander) {
+      let randomAngle = (noise(this.position.x, this.position.y, (millis()/1000) * this.speed) * this.maxWanderDeviation * 2) - this.maxWanderDeviation;
+      angleMode(DEGREES);
+      this.direction.rotate(randomAngle);
+    }
+  }
+
+  // Restricts drawing methods of the funfetti
+  setDrawMode() {
+    switch(this.drawMode) {
+      case 1:
+      default:
+        break;
+      case 0:
+        noFill();
+        break;
+      case 2:
+        noStroke();
+        break;
+    }
+  }
+
+  draw() {
+    this.simulate();
+  }
+}
+
+class CircleFunfetti extends Funfetti {
+  constructor(position, color, size, direction, speed) {
+    super(position, color, size, direction, speed);
+  }
+
+  draw() {
+    super.draw();
+
+    ellipseMode(CENTER);
+    stroke(this.stroke);
+    strokeWeight(this.strokeWeight);
+    fill(this.fill);
+    this.setDrawMode();
+
+    circle(this.position.x, this.position.y, this.size);
+  }
+}
+
+class TriangleFunfetti extends Funfetti {
+  constructor(position, color, size, direction, speed) {
+    super(position, color, size, direction, speed);
+  }
+
+  // Returns the points of the triangle
+  getPoints() {
+    let points = [];
+
+    for(let i=0; i < 3; i++) {
+      let pointVector = createVector(this.size/2, 0).setHeading((120 * i)+ this.direction.heading()).add(this.position);
+      points.push(pointVector);
+    }
+
+    return points;
+  }
+
+  draw() {
+    super.draw();
+
+    let points = this.getPoints();
+    ellipseMode(CENTER);
+    stroke(this.stroke);
+    strokeWeight(this.strokeWeight);
+    fill(this.fill);
+    this.setDrawMode();
+
+    triangle(points[0].x, points[0].y, points[1].x, points[1].y, points[2].x, points[2].y);
+  }
+}
+
+class SquareFunfetti extends Funfetti {
+  constructor(position, color, size, direction, speed) {
+    super(position, color, size, direction, speed);
+  }
+
+  draw() {
+    super.draw();
+
+    push();
+    translate(this.position.x, this.position.y);
+    rotate(this.direction.heading());
+    translate(-this.position.x, -this.position.y);
+    rectMode(CENTER);
+    stroke(this.stroke);
+    strokeWeight(this.strokeWeight);
+    fill(this.fill);
+    this.setDrawMode();
+
+    square(this.position.x, this.position.y, this.size);
+    pop();
   }
 }
