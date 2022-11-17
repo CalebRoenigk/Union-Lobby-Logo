@@ -7,7 +7,7 @@ function preload() {
 
   // TODO: ADD SCENES TO THE SCENE MANAGER
   sceneManager.scenes.push(new LogoScene());
-  SceneManager.scenes.push(new FunfettiScene());
+  sceneManager.scenes.push(new FunfettiScene());
 
   // Run the scene manager preload operation
   // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
