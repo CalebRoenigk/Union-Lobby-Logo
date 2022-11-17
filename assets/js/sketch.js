@@ -33,7 +33,7 @@ function setup() {
   loadSettings();
 
   // Force the scene manager to load the first scene
-  sceneManager.playNext();
+  sceneManager.playNext(); // TODO: DETERMINE WHY THIS ISNT WORKING
 }
 
 function draw() {
@@ -1643,8 +1643,9 @@ class FunfettiScene extends LobbyScene {
   }
   
   setup() {
-    background(255);
     this.funfettiSystem = new FunfettiSystem(this.particleCount);
+    background(255);
+    super.setup();
   }
 
   draw() {
@@ -1687,7 +1688,7 @@ class FunfettiSystem {
         funfetti = new CircleFunfetti(position, color, size, direction, speed);
         break;
     }
-
+    
     this.funfetti.push(funfetti);
   }
 
@@ -1737,7 +1738,7 @@ class FunfettiSystem {
 
     if(this.funfetti.length < this.count) {
       let funfettiSpawnCount = random(0, this.count - this.funfetti.length);
-      for(let j=0; j < funfettiSpawnCount; j++) {
+      for(let i=0; i < funfettiSpawnCount; i++) {
         this.spawnFunfetti();
       }
     }
