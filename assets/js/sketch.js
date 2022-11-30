@@ -8,9 +8,11 @@ function preload() {
   // TODO: ADD SCENES TO THE SCENE MANAGER
   sceneManager.scenes.push(new LogoScene());
   sceneManager.scenes.push(new FunfettiScene());
+  sceneManager.scenes/push(new WebdingScene());
 
   // Run the scene manager preload operation
   // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
+  // TODO: Add option to play video
   if(window.location.href === 'https://calebroenigk.github.io/Union-Lobby-Logo/') {
     sceneManager.preload();
   }
@@ -1868,5 +1870,347 @@ class SquareFunfetti extends Funfetti {
 
     square(this.position.x, this.position.y, this.size);
     pop();
+  }
+}
+
+// Webding Scene
+class WebdingScene extends LobbyScene {
+  constructor(count) {
+    super('Webdings');
+    this.gridSize = count; // How many cells in the grid
+    this.webdings = [];
+
+    this.generateGrid();
+  }
+
+  generateGrid() {
+    let webdingSize = width/this.gridSize;
+    let webdingCount = createVector(this.gridSize, height/webdingSize);
+
+    // Iterate over the grid
+    let randomWebdingIndex = 0;
+    let randomWebdingCount = 0;
+    for(let x=0; x < webdingCount.x; x++) {
+      let webdingRow = [];
+      for(let y=0; y < webdingCount.y; y++) {
+        if(randomWebdingCount <= 0) {
+          randomWebdingIndex = Math.round(random(0,6));
+          randomWebdingCount = Math.round(random(3,12)); // The number of webdings to do before choosing a new webding
+        }
+
+        let webding;
+        let webdingPosition = createVector(x*webdingSize + (webdingSize/2), y*webdingSize + (webdingSize/2));
+
+        switch(randomWebdingIndex) {
+          case 0:
+          case 1:
+            // 0,1: Moon Webding
+            webding = new MoonWebding(webdingPosition, webdingSize, random(0.1, 3), Math.round(random(1,3))/4, random(8,20), random(-1,1));
+            break;
+          case 2:
+            // 2: Wave Webding
+            webding = new WaveWebding(webdingPosition, webdingSize, random(0.1, 3), random(2,9), random(-1,1));
+            break;
+          case 3:
+            // 3: Diagonal Webding
+            webding = new DiagonalWebding(webdingPosition, webdingSize, random(0.1, 3), random(2,9), random(-1,1));
+            break;
+          case 4:
+            // 4: Grid Webding
+            webding = new GridWebding(webdingPosition, webdingSize, random(0.1, 3), random(2,9), random(-1,1));
+            break;
+          case 5:
+          case 6:
+            // 5,6: Checkers Webding
+            webding = new CheckersWebding(webdingPosition, webdingSize, random(0.1, 3), random(2,6), Math.round(random(2,6)));
+            break;
+          default:
+            // Default: No Webding (Blank Webding)
+            webding = new Webding(webdingPosition, webdingSize, random(0.1, 3));
+            break;
+        }
+
+        webdingRow.push(webding);
+
+        randomWebdingCount--;
+      }
+
+      this.webdings.push(webdingRow);
+      randomWebdingCount--;
+    }
+  }
+
+  draw() {
+    background(220);
+    // Draw all webdings in the grid
+    for(let x=0; x < this.webdings.length; x++) {
+      for(let y=0; y < this.webdings[x].length; y++) {
+        this.webdings[x][y].draw();
+      }
+    }
+  }
+}
+
+class Webding {
+  constructor(position, size, speed) {
+    this.position = position;
+    this.size = size;
+    this.speed = speed;
+    this.strokeWeight = Math.max(this.size/16, 2);
+  }
+
+  draw() {
+    noFill();
+    stroke('black');
+    strokeWeight(this.strokeWeight);
+
+    rectMode(CENTER);
+
+    square(this.position.x, this.position.y, this.size);
+  }
+}
+
+class MoonWebding extends Webding {
+  constructor(position, size, speed, fill, duration, direction=0) {
+    super(position, size, speed);
+    this.angle = 0;
+    this.direction = direction >= 0 ? 1 : -1;
+    this.startTime = millis();
+    this.fill = fill;
+    this.cycleDuration = duration / this.speed; // In Seconds
+  }
+
+  drawMoon() {
+    // Draw Background Fill
+    noStroke();
+    fill('white');
+
+    circle(this.position.x, this.position.y, this.size-(this.strokeWeight*2));
+
+    let cycleLength = (this.cycleDuration*1000);
+    let segmentDuration = cycleLength / 4;
+    let animationTime = (millis() - this.startTime)%cycleLength;
+    let cycleTime = animationTime % segmentDuration;
+    let subsegmentDuration = segmentDuration * 0.75; // 3 on 1 off per segment, 4 segments total
+    let cyclePosition = cycleTime / subsegmentDuration;
+    cyclePosition = cyclePosition >= 1 ? 1 : cyclePosition;
+    let angleBase = (this.direction*HALF_PI) * Math.floor(animationTime/segmentDuration);
+    this.angle = angleBase + (this.easeCubicInOut(cyclePosition) * (this.direction*HALF_PI));
+
+    // Draw Fill
+    push();
+    translate(this.position.x, this.position.y);
+    rotate(this.angle);
+    translate(-this.position.x, -this.position.y);
+    noStroke();
+    fill('black');
+
+    arc(this.position.x, this.position.y, this.size-(this.strokeWeight*2), this.size-(this.strokeWeight*2), 0, this.fill*TWO_PI, PIE);
+    pop();
+
+    // Draw Outline
+    noFill();
+    stroke('black');
+    strokeWeight(this.strokeWeight);
+
+    circle(this.position.x, this.position.y, this.size-(this.strokeWeight*2));
+  }
+
+  draw() {
+    this.drawMoon();
+
+    super.draw();
+  }
+
+  easeCubicInOut(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+}
+
+class WaveWebding extends Webding {
+  constructor(position, size, speed, frequency, direction=0) {
+    super(position, size, speed);
+    this.waveCount = 0;
+    this.resolution = 6;
+    this.amplitude = (this.size/(this.waveCount+2))/2;
+    this.offset = random(1000);
+    this.direction = direction >= 0 ? 1 : -1;
+    this.frequency = frequency;
+  }
+
+  drawWaves() {
+    // Iterate over the Y
+    let yInterval = this.size/(this.waveCount+2);
+    let waveStart = createVector(this.position.x-this.size/2, this.position.y-this.size/2);
+    for(let y=0; y < this.waveCount + 3; y++) {
+      // Draw a wave across the webding
+      let xInterval = this.size/(this.resolution+1);
+      noFill();
+      stroke('black');
+      strokeWeight(this.strokeWeight);
+
+      beginShape();
+      for(let x=0; x < this.resolution + 2; x++) {
+        let wavePoint = createVector(x * xInterval, yInterval*y).add(waveStart);
+        let sineOffset = this.amplitude*Math.sin(((wavePoint.x/this.size) * this.frequency + (millis()/1000)*this.speed)+this.offset);
+        wavePoint.y += sineOffset;
+
+        // Clamp the y to the webding
+        wavePoint.y = Math.max(Math.min(this.size/2 + this.position.y, wavePoint.y), this.position.y - this.size/2)
+
+        vertex(wavePoint.x, wavePoint.y);
+      }
+      endShape();
+    }
+  }
+
+  draw() {
+    this.drawWaves();
+
+    super.draw();
+  }
+}
+
+class DiagonalWebding extends Webding {
+  constructor(position, size, speed, duration, direction=0) {
+    super(position, size, speed);
+    this.resolution = 2;
+    this.duration = duration;
+    this.direction = direction >= 0 ? 1 : -1;
+  }
+
+  drawDiagonals() {
+    // Create the points for each
+    let lineSpacing = this.size/this.resolution;
+    let lineStart = createVector(-this.size*1.5 + (this.position.x-this.size/2), this.position.y-this.size/2);
+    if(this.direction === -1) {
+      lineStart = createVector(-this.size*1 + (this.position.x-this.size/2), this.position.y-this.size/2);
+    }
+
+    let xRange = createVector(this.position.x-this.size/2, this.position.x+this.size/2);
+    for(let x=0; x < this.resolution*3; x++) {
+      let xOffset = (((millis()*this.speed) % (this.duration*1000)))/(this.duration*1000)*this.size*this.direction;
+
+      // Create the two line points
+      let startPoint = createVector(x*lineSpacing+xOffset, 0).add(lineStart);
+      let endPoint = createVector(this.size, this.size).add(startPoint);
+
+      // Draw the line only if it is within the bounds of the webding
+      if(!(endPoint.x <= xRange.x || startPoint.x >= xRange.y)) {
+        // Clamp the start and end points to within the webding bounds if they are outside of it
+        if(startPoint.x < xRange.x) {
+          // Use the distance from the endpoint to the left edge of the webding
+          let xDistance = endPoint.x - xRange.x;
+          startPoint.x = endPoint.x - xDistance;
+          startPoint.y = endPoint.y - xDistance;
+        }
+        if(endPoint.x > xRange.y) {
+          // Use the distance from the startpoint to the right edge of the webding
+          let xDistance = xRange.y - startPoint.x;
+          endPoint.x = startPoint.x + xDistance;
+          endPoint.y = startPoint.y + xDistance;
+        }
+
+        noFill();
+        stroke('black');
+        strokeWeight(this.strokeWeight);
+
+        line(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+      }
+    }
+  }
+
+  draw() {
+    this.drawDiagonals();
+
+    super.draw();
+  }
+}
+
+class GridWebding extends Webding {
+  constructor(position, size, speed, duration, direction=0) {
+    super(position, size, speed);
+    this.resolution = createVector(2, 5);
+    this.duration = duration;
+    this.direction = direction >= 0 ? 1 : -1;
+  }
+
+  drawGrid() {
+    let gridResolutionSize = this.resolution.y - this.resolution.x
+    let gridMiddleResolution = Math.floor(gridResolutionSize/2 + this.resolution.x);
+    let gridTime = (millis()*this.speed) % (this.duration*1000)/1000;
+    let gridResolution = Math.round((gridResolutionSize/2) * Math.sin(gridTime) + gridMiddleResolution);
+
+    let gridStart = createVector(this.position.x-this.size/2, this.position.y-this.size/2);
+    let gridSpacing = this.size/gridResolution;
+    for(let x=0; x < gridResolution+1; x++) {
+      // Draw the Column Line
+      let startPoint = createVector(gridSpacing*x, 0).add(gridStart);
+      let endPoint = createVector(0, this.size).add(startPoint);
+
+      noFill();
+      stroke('black');
+      strokeWeight(this.strokeWeight);
+
+      line(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+    }
+
+    for(let y=0; y < gridResolution+1; y++) {
+      // Draw the Row Line
+      let startPoint = createVector(0, gridSpacing*y).add(gridStart);
+      let endPoint = createVector(this.size, 0).add(startPoint);
+
+      noFill();
+      stroke('black');
+      strokeWeight(this.strokeWeight);
+
+      line(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+    }
+
+    // console.log(gridTime)
+  }
+
+  draw() {
+    this.drawGrid();
+
+    super.draw();
+  }
+}
+
+class CheckersWebding extends Webding {
+  constructor(position, size, speed, duration, resolution, direction=0) {
+    super(position, size, speed);
+    this.resolution = resolution;
+    this.duration = duration;
+    this.direction = direction >= 0 ? 1 : -1;
+  }
+
+  drawCheckers() {
+    // Draw the checkers
+    let cellSize = this.size/this.resolution;
+    let gridStart = createVector(this.position.x - this.size/2, this.position.y - this.size/2).add(createVector(cellSize/2, cellSize/2));
+    let gridTime = ((millis())%(this.duration*1000))/(this.duration*1000) > 0.5 ? 1 : 0;
+    for(let x=0; x < this.resolution; x++) {
+      for(let y=0; y < this.resolution; y++) {
+        let index = (x * this.resolution) + y;
+        let cellPosition = createVector(cellSize*x, cellSize*y).add(gridStart);
+
+        noStroke();
+        fill('black');
+        if((index + gridTime)%2 === 0) {
+          fill('white');
+        }
+
+        rectMode(CENTER);
+
+        square(cellPosition.x, cellPosition.y, cellSize);
+      }
+    }
+  }
+
+  draw() {
+    this.drawCheckers();
+
+    super.draw();
   }
 }
