@@ -9,10 +9,12 @@ function preload() {
   sceneManager.scenes.push(new LogoScene());
   sceneManager.scenes.push(new FunfettiScene());
   sceneManager.scenes.push(new WebdingScene());
+  sceneManager.scenes.push(new PictogramMorpherScene());
 
   // Run the scene manager preload operation
   // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
   // TODO: Add option to play video
+  // TODO: Test Webding scene
   if(window.location.href === 'https://calebroenigk.github.io/Union-Lobby-Logo/') {
     sceneManager.preload();
   }
@@ -888,7 +890,7 @@ class SceneManager {
 
   // Resets the P5JS modes to their defaults between scenes
   resetModes() {
-    colorMode(RGB, 255); // Color Mode
+    colorMode(RGB, 255, 255, 255, 1); // Color Mode
     imageMode(CORNER); // Image Draw Mode
     angleMode(RADIANS); // Angle Interpretation Mode
     drawingContext.fillStyle = null; // Drawing Context Fill
@@ -1875,9 +1877,9 @@ class SquareFunfetti extends Funfetti {
 
 // Webding Scene
 class WebdingScene extends LobbyScene {
-  constructor(count) {
+  constructor() {
     super('Webdings');
-    this.gridSize = count; // How many cells in the grid
+    this.gridSize = 36; // How many cells in the grid
     this.webdings = [];
 
     this.generateGrid();
@@ -2214,3 +2216,244 @@ class CheckersWebding extends Webding {
     super.draw();
   }
 }
+
+// Icon Morpher Scene
+class PictogramMorpherScene extends LobbyScene {
+  constructor() {
+    super('Pictogram Morpher');
+    this.iconMorpherGrid = new IconGrid(64);
+  }
+
+  // Acts like the standard sketch setup function
+  setup() {
+    this.iconMorpherGrid.setup();
+    super.setup();
+  }
+
+  draw() {
+    this.iconMorpherGrid.draw();
+  }
+}
+
+class ColorGroup {
+  constructor(color1, color2, color3, color4, color5) {
+    this.color1 = color1;
+    this.color2 = color2;
+    this.color3 = color3;
+    this.color4 = color4;
+    this.color5 = color5;
+
+    this.colors = [color1, color2, color3, color4, color5];
+  }
+
+  getRandomColor(excludeColor1 = false) {
+    let minColorIndex = excludeColor1 ? 1 : 0;
+
+    return this.colors[Math.round(random(minColorIndex, this.colors.length-1))];
+  }
+}
+
+class IconForm {
+  constructor(pointA, pointB, pointC) {
+    this.pointA = pointA;
+    this.pointB = pointB;
+    this.pointC = pointC;
+  }
+
+  getShape() {
+    let pointD = createVector(this.pointB.y, this.pointB.x);
+    let pointE = createVector(this.pointA.y, this.pointA.x);
+    return [this.pointA, this.pointB, this.pointC, pointD, pointE];
+  }
+}
+
+class IconMorpher {
+  constructor(position, size, duration, color) {
+    this.shapes = [new IconForm(createVector(0.5,1), createVector(0.75,1), createVector(1,1)), new IconForm(createVector(0.4765625,0.9765625), createVector(0.6015625,0.8515625), createVector(0.7265625,0.7265625)), new IconForm(createVector(0.7265625,0.9765625), createVector(0.4765625,0.7265625), createVector(0.4765625,0.4765625)), new IconForm(createVector(0.8515625,0.8515625), createVector(0.4765625,0.8515625), createVector(0.4765625,0.4765625))];
+    this.activeShape = this.shapes[Math.round(random(0, this.shapes.length-1))];
+    this.nextShape = this.shapes[Math.round(random(0, this.shapes.length-1))];
+    this.duration = duration;
+    this.timer = duration;
+    this.tweenDuration = 1.5;
+    this.position = position;
+    this.size = size;
+    this.color = color;
+  }
+
+  draw() {
+    this.timer -= deltaTime/1000;
+
+    if(this.timer <= 0) {
+      this.selectTween();
+      this.timer = this.duration;
+    }
+
+    this.calculateTween();
+  }
+
+  selectTween() {
+    this.activeShape = this.nextShape;
+    this.nextShape = this.shapes[Math.round(random(0, this.shapes.length-1))];
+  }
+
+  calculateTween() {
+    let activeShape = this.activeShape.getShape();
+    let nextShape = this.nextShape.getShape();
+    let tweenTime = max(0,min(1,(1 - (this.timer - this.tweenDuration)) / this.tweenDuration));
+    tweenTime = this.easeOutElastic(tweenTime);
+
+    this.drawIcon(activeShape, nextShape, tweenTime);
+  }
+
+  drawIcon(shapeA, shapeB, tweenTime) {
+    let shape = [];
+    for(let i=0; i < shapeA.length; i++) {
+      let point = this.tweenPoint(shapeA[i], shapeB[i], tweenTime);
+      shape.push(point);
+    }
+
+    shape = this.flipX(shape);
+    shape = this.flipY(shape);
+
+    noFill();
+    strokeWeight(5);
+    stroke(this.color);
+    strokeCap(ROUND);
+    strokeJoin(ROUND);
+
+    let shapeKeys = Object.keys(shape);
+    for(let i=0; i < shapeKeys.length; i++) {
+      let shapeKey = shapeKeys[i];
+
+      beginShape();
+      for(let j=0; j < shape[shapeKey].length; j++) {
+        let point = this.getWorldPoint(shape[shapeKey][j]);
+        vertex(point.x, point.y);
+      }
+      endShape();
+
+    }
+  }
+
+  tweenPoint(pointA, pointB, tweenTime) {
+    return p5.Vector.lerp(pointA, pointB, tweenTime)
+  }
+
+  getWorldPoint(point) {
+    let scaledPoint = p5.Vector.mult(point, this.size/2);
+    let positionedPoint = p5.Vector.add(p5.Vector.sub(this.position, createVector(this.size/2, this.size/2)), scaledPoint);
+
+    return positionedPoint;
+  }
+
+  flipX(shape) {
+    let flipped = [];
+    for(let i=shape.length-1; i >= 0; i--) {
+      let point = shape[i];
+      let xDistance = 1+(1 - point.x);
+      flipped.push(createVector(xDistance, point.y));
+    }
+
+    let newShape = {q0: shape, q1: flipped};
+    return newShape;
+  }
+
+  flipY(shape) {
+    let flipA = [];
+    let flipB = [];
+
+    for(let i=shape.q0.length-1; i >= 0; i--) {
+      let pointA = shape.q0[i];
+      let pointB = shape.q1[i];
+
+      let yADistance = 1+(1 - pointA.y);
+      let yBDistance = 1+(1 - pointB.y);
+      flipA.push(createVector(pointA.x, yADistance));
+      flipB.push(createVector(pointB.x, yBDistance));
+    }
+
+    shape.q2 = flipB;
+    shape.q3 = flipA;
+
+    return shape;
+  }
+
+  easeOutElastic(x) {
+    const c4 = (2 * PI) / 3;
+
+    return x === 0 ? 0 : x === 1 ? 1 : pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * c4) + 1;
+  }
+}
+
+class IconGrid {
+  constructor(cellSize) {
+    this.cellSize = cellSize;
+    this.cellCount = null;
+    this.margin = cellSize/2;
+    this.iconMorphers = null;
+    this.colorGroups = [new ColorGroup('#6C4AB6', '#8D72E1', '#8D9EFF', '#B9E0FF', '#FFFFFF'), new ColorGroup('#001253', '#E14D2A', '#FD841F', '#3E6D9C', '#B9E0FF'), new ColorGroup('#7A4069', '#CD104D', '#E14D2A', '#FD841F', '#FFD384'), new ColorGroup('#100720', '#F94892', '#FF7F3F', '#FBDF07', '#89CFFD'), new ColorGroup('#F5E8C7', '#293462', '#D61C4E', '#FEB139', '#AC7088')];
+    this.activeGroup = null;
+  }
+
+  setup() {
+    this.activeGroup = null;
+    this.getRandomColor();
+    if(this.cellCount === null) {
+      this.getCellCount();
+    }
+    
+    this.generateIconGrid();
+  }
+
+  getCellCount() {
+    // Total width
+    let tWidth = width - (this.margin*2);
+    // Total height
+    let tHeight = height - (this.margin*2);
+
+    // Total Cell Count
+    let xCount = Math.round(tWidth / this.cellSize);
+    let yCount = Math.round(tHeight / this.cellSize);
+
+    this.cellCount = createVector(xCount, yCount);
+
+    // Modified Cell Size
+    this.cellSize = createVector(tWidth/this.cellCount.x, tHeight/this.cellCount.y);
+  }
+
+  generateIconGrid() {
+    console.log('generating grid');
+    let iconGrid = [];
+    for(let x=0; x < this.cellCount.x; x++) {
+      let iconRow = [];
+      for(let y=0; y < this.cellCount.y; y++) {
+        let position = createVector(x*this.cellSize.x+this.margin+this.cellSize.x/2,y*this.cellSize.y+this.margin+this.cellSize.y/2);
+        iconRow.push(new IconMorpher(position, min(this.cellSize.x, this.cellSize.y), random(2,5), this.getRandomColor()));
+      }
+
+      iconGrid.push(iconRow);
+    }
+
+    this.iconMorphers = iconGrid;
+    console.log(this.iconMorphers);
+  }
+
+  draw() {
+    background(this.activeGroup.color1);
+
+    for(let x=0; x < this.cellCount.x; x++) {
+      for(let y=0; y < this.cellCount.y; y++) {
+        this.iconMorphers[x][y].draw();
+      }
+    }
+  }
+
+  getRandomColor() {
+    if(this.activeGroup === undefined || this.activeGroup === null) {
+      this.activeGroup = this.colorGroups[Math.round(random(0, this.colorGroups.length-1))];
+    }
+
+    return this.activeGroup.getRandomColor(true);
+  }
+}
+
