@@ -2422,7 +2422,6 @@ class IconGrid {
   }
 
   generateIconGrid() {
-    console.log('generating grid');
     let iconGrid = [];
     for(let x=0; x < this.cellCount.x; x++) {
       let iconRow = [];
@@ -2435,7 +2434,6 @@ class IconGrid {
     }
 
     this.iconMorphers = iconGrid;
-    console.log(this.iconMorphers);
   }
 
   draw() {
