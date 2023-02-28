@@ -1609,7 +1609,7 @@ class NullScene extends LobbyScene {
 // Logo Scene
 class LogoScene extends LobbyScene {
   constructor() {
-    super('Logo', new SceneOptions(true, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox'], 0));
+    super('Logo', new SceneOptions(true, ['Union', 'NGC', 'NRG', 'Diversey', 'Fox', 'BITC'], 0));
     this.logos = [];
     this.amount = 5;
     this.animationLength = 3.5;
@@ -2512,11 +2512,11 @@ class PepsiBubblerSystem {
     this.bubbles = [];
     this.velocityXRange = 0.5;
     this.velocityYRange = new Range(-2, -6);
-    this.sizeRange = new Range(2, 36);
+    this.sizeRange = new Range(3, 64);
     this.bubbleColors = [color('#000000'), color('#FFFFFF')];
     this.frequencyRange = new Range(0.5, 4);
     this.amplitudeRange = new Range(1, 4);
-    this.fadeDuration = new Range(3, 6);
+    this.fadeDuration = new Range(3.5, 7);
     this.spawnRate = 0.25;
     this.spawnTimer = 0;
     this.spawnMax = 3;
@@ -2707,7 +2707,7 @@ class WordClock {
 
     // Display
     this.textActiveColor = color("white");
-    this.textInactiveColor = color("rgba(33,74,222,0.25)"); // rgba(255,255,255,0.25) // TODO: CHANGE THIS BACK AFTER 03/08/2023
+    this.textInactiveColor = color("rgba(33,74,222,0.5)"); // rgba(255,255,255,0.25) // TODO: CHANGE THIS BACK AFTER 03/08/2023
     this.textSize = 50;
     this.textRowHeight = min(
         (height - (this.marginTop + this.marginBottom)) /
@@ -2993,7 +2993,7 @@ class WaveHandler {
 
   // Generate the waves
   generateWaves() {
-    let colors = [color('#eb1933'), color('white'), color('#214ade')];
+    let colors = [color('#eb1933'), color('white'), color('#004B93')];
     let verticals = [-100, round(height* (0.4)), round(height * (0.6))];
     for(let i=0; i < colors.length; i++) {
       this.waves.push(new WaveRenderer(createVector(random(0.5, 3), random(-3, -5)), createVector(random(22, 60), random(8, 16)), createVector(random(0, PI), random(0, PI)), verticals[i], colors[i], this));
