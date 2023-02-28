@@ -11,6 +11,7 @@ function preload() {
   sceneManager.scenes.push(new WebdingScene());
   sceneManager.scenes.push(new PictogramMorpherScene());
   sceneManager.scenes.push(new PepsiBubblerScene());
+  sceneManager.scenes.push(new WordClockScene());
 
   // Run the scene manager preload operation
   // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
@@ -2626,5 +2627,333 @@ class PepsiBubble {
     let bubbleDuration = mathUtil.clamp(this.fadeDuration - this.bubbleTime, 0, this.fadeDuration);
 
     return (bubbleDuration/this.fadeDuration) * this.size;
+  }
+}
+
+// Clock Scene
+class WordClockScene extends LobbyScene {
+  constructor() {
+    super('Word Clock', new SceneOptions(false, [], 0));
+    this.wordClock = new WordClock();
+  }
+
+  setup() {
+    this.wordClock = new WordClock();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    background(0);
+    this.wordClock.draw();
+  }
+}
+
+class WordClock {
+  constructor() {
+    this.renderDebug = false;
+
+    // Guides
+    this.marginTop = 55;
+    this.marginLeft = 72;
+    this.marginRight = 68;
+    this.marginBottom = 50;
+    this.colWidth = 237;
+    this.col1 = createVector(
+        this.marginLeft,
+        this.marginLeft + this.colWidth
+    );
+    this.col2 = createVector(
+        width - this.marginRight - this.colWidth,
+        width - this.marginRight
+    );
+
+    // Text
+    this.textDisplay = [
+      [
+        new TimeText("It is", 1, true),
+        new TimeText("a", 1, false),
+        new TimeText("ten", 2, true),
+        new TimeText("quarter", 2, false),
+      ],
+      [
+        new TimeText("twenty", 1, true),
+        new TimeText("five", 1, false),
+        new TimeText("half", 2, true),
+        new TimeText("past", 2, false),
+      ],
+      [
+        new TimeText("to", 1, true),
+        new TimeText("one", 1, false),
+        new TimeText("two", 2, true),
+        new TimeText("three", 2, false),
+      ],
+      [
+        new TimeText("four", 1, true),
+        new TimeText("five", 1, false),
+        new TimeText("six", 2, true),
+        new TimeText("seven", 2, false),
+      ],
+      [
+        new TimeText("eight", 1, true),
+        new TimeText("nine", 1, false),
+        new TimeText("ten", 2, true),
+        new TimeText("eleven", 2, false),
+      ],
+      [new TimeText("tweleve", 1, true), new TimeText("o'clock", 2, true)],
+    ];
+
+    // Display
+    this.textActiveColor = color("white");
+    this.textInactiveColor = color("#214ade"); // rgba(255,255,255,0.25) // TODO: CHANGE THIS BACK AFTER 03/08/2023
+    this.textSize = 50;
+    this.textRowHeight = min(
+        (height - (this.marginTop + this.marginBottom)) /
+        this.textDisplay.length,
+        this.textSize * 1.5
+    );
+  }
+
+  draw() {
+    if (this.renderDebug) {
+      this.renderGuides();
+    }
+    textStyle(NORMAL);
+    this.getTimeAsText();
+    this.renderTextDisplay();
+  }
+
+  renderGuides() {
+    noFill();
+    stroke(color("rgb(0,255,255)"));
+    strokeWeight(1);
+
+    line(this.col1.x, 0, this.col1.x, height);
+    line(this.col1.y, 0, this.col1.y, height);
+    line(this.col2.x, 0, this.col2.x, height);
+    line(this.col2.y, 0, this.col2.y, height);
+    line(0, this.marginTop, width, this.marginTop);
+    line(0, height - this.marginBottom, width, height - this.marginBottom);
+  }
+
+  getTimeAsText() {
+    // Set all text to inactive
+    for (let x = 0; x < this.textDisplay.length; x++) {
+      for (let y = 0; y < this.textDisplay[x].length; y++) {
+        this.textDisplay[x][y].setActive(false);
+      }
+    }
+
+    let prefix = this.getPrefixText();
+
+    // Get minute text
+    let minuteText = this.getMinuteText();
+
+    /// Get Preposition
+    let preposition = this.getPrepositionText();
+
+    // Get Hour
+    let hourText = this.getHourText();
+
+    return [prefix, minuteText, preposition, hourText].join(" ");
+  }
+
+  getPrefixText() {
+    let minuteValue = floor((minute() + 1) / 5);
+    switch (minuteValue) {
+      case 0:
+      default:
+        return "";
+      case 1:
+      case 2:
+      case 4:
+      case 5:
+      case 6:
+      case 7:
+      case 8:
+      case 10:
+      case 11:
+        this.textDisplay[0][0].setActive(true);
+        return "It is";
+      case 3:
+      case 9:
+        this.textDisplay[0][0].setActive(true);
+        this.textDisplay[0][1].setActive(true);
+        return "It is a";
+    }
+  }
+
+  getHourText() {
+    let hourValue = this.wrapHour(hour());
+    if (minute() + 1 > 30) {
+      hourValue = this.wrapHour(hour() + 1);
+    }
+
+    let hourText = "zero";
+    switch (hourValue) {
+      case 1:
+        this.textDisplay[2][1].setActive(true);
+        hourText = "one";
+        break;
+      case 2:
+        this.textDisplay[2][2].setActive(true);
+        hourText = "two";
+        break;
+      case 3:
+        this.textDisplay[2][3].setActive(true);
+        hourText = "three";
+        break;
+      case 4:
+        this.textDisplay[3][0].setActive(true);
+        hourText = "four";
+        break;
+      case 5:
+        this.textDisplay[3][1].setActive(true);
+        hourText = "five";
+        break;
+      case 6:
+        this.textDisplay[3][2].setActive(true);
+        hourText = "six";
+        break;
+      case 7:
+        this.textDisplay[3][3].setActive(true);
+        hourText = "seven";
+        break;
+      case 8:
+        this.textDisplay[4][0].setActive(true);
+        hourText = "eight";
+        break;
+      case 9:
+        this.textDisplay[4][1].setActive(true);
+        hourText = "nine";
+        break;
+      case 10:
+        this.textDisplay[4][2].setActive(true);
+        hourText = "ten";
+        break;
+      case 11:
+        this.textDisplay[4][3].setActive(true);
+        hourText = "eleven";
+        break;
+      case 12:
+        this.textDisplay[5][0].setActive(true);
+        hourText = "tweleve";
+        break;
+    }
+
+    let suffix = "";
+    if (minute() == 0) {
+      this.textDisplay[5][1].setActive(true);
+      suffix = " o'clock";
+    }
+
+    return hourText + suffix;
+  }
+
+  wrapHour(hour) {
+    return hour % 12;
+  }
+
+  getMinuteText() {
+    let minuteValue = floor((minute() + 1) / 5);
+    switch (minuteValue) {
+      case 0:
+      default:
+        return "";
+      case 1:
+      case 11:
+        this.textDisplay[1][1].setActive(true);
+        return "five";
+      case 2:
+      case 10:
+        this.textDisplay[0][2].setActive(true);
+        return "ten";
+      case 3:
+      case 9:
+        this.textDisplay[0][1].setActive(true);
+        this.textDisplay[0][3].setActive(true);
+        return "a quarter";
+      case 4:
+      case 8:
+        this.textDisplay[1][0].setActive(true);
+        return "twenty";
+      case 5:
+      case 7:
+        this.textDisplay[1][0].setActive(true);
+        this.textDisplay[1][1].setActive(true);
+        return "twenty five";
+      case 6:
+        this.textDisplay[1][2].setActive(true);
+        return "half";
+    }
+  }
+
+  getPrepositionText() {
+    let minuteValue = floor((minute() + 1) / 5);
+    switch (minuteValue) {
+      case 0:
+      default:
+        return "";
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+        this.textDisplay[1][3].setActive(true);
+        return "past";
+      case 7:
+      case 8:
+      case 9:
+      case 10:
+      case 11:
+        this.textDisplay[2][0].setActive(true);
+        return "to";
+    }
+  }
+
+  renderTextDisplay() {
+    for (let y = 0; y < this.textDisplay.length; y++) {
+      for (let i = 0; i < this.textDisplay[y].length; i++) {
+        // Render the text
+        noStroke();
+        fill(this.textInactiveColor);
+        if (this.textDisplay[y][i].active) {
+          fill(this.textActiveColor);
+        }
+        textSize(this.textSize);
+        textFont("IBM Plex Sans");
+        textAlign(LEFT);
+        let renderCol = this.col1;
+        if (this.textDisplay[y][i].col == 2) {
+          renderCol = this.col2;
+        }
+        let xPosition = renderCol.x;
+        if (!this.textDisplay[y][i].start) {
+          textAlign(RIGHT);
+          xPosition = renderCol.y;
+        }
+        let yPosition =
+            y * this.textRowHeight + this.marginTop + this.textSize;
+
+        text(this.textDisplay[y][i].text, xPosition, yPosition);
+      }
+    }
+  }
+}
+
+class TimeText {
+  constructor(text, col, start) {
+    this.text = text;
+    this.col = col;
+    this.start = start;
+    if (start === undefined) {
+      this.start = false;
+    }
+    this.active = true;
+  }
+
+  setActive(active) {
+    this.active = active;
   }
 }
