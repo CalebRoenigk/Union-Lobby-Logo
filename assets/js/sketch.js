@@ -2655,10 +2655,10 @@ class WordClock {
 
     // Guides
     this.marginTop = 55;
-    this.marginLeft = 72;
-    this.marginRight = 68;
+    this.marginLeft = 52;
+    this.marginRight = 48;
     this.marginBottom = 50;
-    this.colWidth = 237;
+    this.colWidth = 257;
     this.col1 = createVector(
         this.marginLeft,
         this.marginLeft + this.colWidth
