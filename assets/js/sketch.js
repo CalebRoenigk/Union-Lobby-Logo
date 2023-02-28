@@ -12,11 +12,13 @@ function preload() {
   sceneManager.scenes.push(new PictogramMorpherScene());
   sceneManager.scenes.push(new PepsiBubblerScene());
   sceneManager.scenes.push(new WordClockScene());
-
+  sceneManager.scenes.push(new PepsiFullBleed());
+  
   // Run the scene manager preload operation
-  // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
   // TODO: Add option to play video
   // TODO: Test Webding scene
+
+  // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
   if(window.location.href === 'https://calebroenigk.github.io/Union-Lobby-Logo/') {
     sceneManager.preload();
   }
@@ -2955,5 +2957,89 @@ class TimeText {
 
   setActive(active) {
     this.active = active;
+  }
+}
+
+// Pepsi Full Bleed Scene
+class PepsiFullBleed extends LobbyScene {
+  constructor() {
+    super('Pepsi Full Bleed', new SceneOptions(false, [], 0));
+    this.waveHandler = new WaveHandler();
+  }
+
+  setup() {
+    this.waveHandler = new WaveHandler();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.waveHandler.draw();
+  }
+}
+
+class WaveHandler {
+  constructor() {
+    this.waves = [];
+    this.timer = 0;
+    this.generateWaves();
+  }
+
+  draw() {
+    this.timer += deltaTime/1000;
+
+    this.waves.forEach(wave => wave.draw());
+  }
+
+  // Generate the waves
+  generateWaves() {
+    let colors = [color('#eb1933'), color('white'), color('#214ade')];
+    let verticals = [-100, round(height* (0.4)), round(height * (0.6))];
+    for(let i=0; i < colors.length; i++) {
+      this.waves.push(new WaveRenderer(createVector(random(0.5, 3), random(-3, -5)), createVector(random(22, 60), random(8, 16)), createVector(random(0, PI), random(0, PI)), verticals[i], colors[i], this));
+    }
+  }
+}
+
+class WaveRenderer {
+  constructor(frequency, amplitude, phase, verticalOffset, color, handler) {
+    this.frequency = frequency;
+    this.amplitude = amplitude;
+    this.phase = phase;
+    this.verticalOffset = verticalOffset;
+    this.color = color;
+    this.handler = handler;
+    this.resolution = 32;
+    this.points = [];
+    this.offsets = [];
+
+    this.generatePoints();
+  }
+
+  draw() {
+    noStroke();
+    fill(this.color);
+
+    beginShape();
+    vertex(0, height);
+
+    this.points.forEach(point => {
+      let sine1 = mathUtil.sine(this.handler.timer, this.frequency.x, this.amplitude.x, this.phase.x + point.x/width, 0);
+      let sine2 = mathUtil.sine(this.handler.timer, this.frequency.y, this.amplitude.y, this.phase.y + point.x/width, 0);
+
+      vertex(point.x, point.y + (sine1 + sine2));
+    });
+
+    vertex(width, height);
+    endShape(CLOSE);
+  }
+
+  // Generate the points
+  generatePoints() {
+    let xSpacing = round(width/(this.resolution - 1));
+    for(let i=0; i < this.resolution; i++) {
+      this.points.push(createVector(xSpacing * i, this.verticalOffset));
+
+    }
   }
 }
