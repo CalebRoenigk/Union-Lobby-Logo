@@ -10,6 +10,7 @@ function preload() {
   sceneManager.scenes.push(new FunfettiScene());
   sceneManager.scenes.push(new WebdingScene());
   sceneManager.scenes.push(new PictogramMorpherScene());
+  sceneManager.scenes.push(new PepsiBubblerScene());
 
   // Run the scene manager preload operation
   // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
@@ -73,6 +74,16 @@ class MathUtil {
     }
     
     return normalized;
+  }
+  
+  // Returns a sine calculation from given values
+  sine(value, frequency, amplitude, phase, verticalOffset) {
+    return  amplitude * sin((value + phase) * frequency) + verticalOffset;
+  }
+
+  // Returns a cosine calculation from given values
+  cosine(value, frequency, amplitude, phase, verticalOffset) {
+    return  amplitude * cos((value + phase) * frequency) + verticalOffset;
   }
 }
 
@@ -256,6 +267,25 @@ class P5Util {
   truncatedVectorString(vector) {
     // console.log('vector', vector, ('(' + [vector.x,vector.y].join(',') + ')'));
     return '(' + [vector.x,vector.y].join(',') + ')';
+  }
+}
+
+// Custom Data Constructs
+// Range
+class Range {
+  constructor(min,max) {
+    this.min = min;
+    this.max = max;
+  }
+  
+  // Tests if a value is within the range
+  inRange(value) {
+    return value >= this.min && value <= this.max;
+  }
+  
+  // Clamps the value within the range
+  clampValue(value) {
+    return mathUtil(value, this.min, this.max);
   }
 }
 
@@ -705,7 +735,6 @@ function mouseReleased() {
     sceneManager.maskEditor.drop();
   }
 }
-
 
 class SceneManager {
   constructor(scenes = [], duration= 60, size = 800) {
@@ -2455,3 +2484,147 @@ class IconGrid {
   }
 }
 
+// Pepsi Bubbler Scene
+class PepsiBubblerScene extends LobbyScene {
+  constructor() {
+    super('Pepsi Bubbles', new SceneOptions(false, [], 0));
+    this.bubbleCount = 24;
+    this.pepsiBubbler = new PepsiBubblerSystem(this.bubbleCount);
+  }
+
+  setup() {
+    this.pepsiBubbler = new PepsiBubblerSystem(this.bubbleCount);
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.pepsiBubbler.draw();
+  }
+}
+
+class PepsiBubblerSystem {
+  constructor(bubbleCount) {
+    this.bubbleCount = bubbleCount;
+    this.bubbles = [];
+    this.velocityXRange = 0.5;
+    this.velocityYRange = new Range(-2, -6);
+    this.sizeRange = new Range(2, 36);
+    this.bubbleColors = [color('#000000'), color('#FFFFFF')];
+    this.frequencyRange = new Range(0.5, 4);
+    this.amplitudeRange = new Range(1, 4);
+    this.fadeDuration = new Range(3, 6);
+    this.spawnRate = 0.25;
+    this.spawnTimer = 0;
+    this.spawnMax = 3;
+  }
+
+  update() {
+    // Update the bubbles
+    for(let i=0; i < this.bubbles.length; i++) {
+      let bubble = this.bubbles[i];
+
+      bubble.draw();
+
+      // Check if the bubble is of size 0
+      if(bubble.getBubbleSize() === 0) {
+        this.bubbles[i] = null;
+      }
+
+      // Check if the bubble is outside of view
+      if(bubble.position.y < 0 - bubble.getBubbleSize() || (bubble.position.x < 0 - bubble.getBubbleSize() || bubble.position.x > width + bubble.getBubbleSize())) {
+        this.bubbles[i] = null;
+      }
+    }
+
+    // Remove all nulls from the bubbles array
+    this.bubbles = this.bubbles.filter(bubble => bubble !== null);
+
+    // Add bubbles if needed
+    if(this.bubbles.length < this.bubbleCount) {
+      this.spawnTimer -= deltaTime/1000;
+      if(this.spawnTimer <= 0) {
+        // Can spawn up to spawnMax bubbles
+        for(let i=0; i < min(this.bubbleCount - this.bubbles.length, this.spawnMax); i++) {
+          this.spawnBubble();
+        }
+        this.spawnTimer = this.spawnRate;
+      }
+    }
+  }
+
+  draw() {
+    // Draw the background first
+    this.drawBackground();
+
+    this.update();
+  }
+
+  // Draws the flat background
+  drawBackground() {
+    noStroke();
+    fill('#214ade');
+
+    rect(0,0,width,height);
+  }
+
+  // Spawns a bubble
+  spawnBubble() {
+    let position = createVector(random(0,width), height + 50);
+    let velocity = createVector(random(-this.velocityXRange, this.velocityXRange), random(this.velocityYRange.min, this.velocityYRange.max));
+    let size = random(this.sizeRange.min, this.sizeRange.max);
+    let color = this.bubbleColors[round(random(0, this.bubbleColors.length-1))];
+    let frequency = random(this.frequencyRange.min, this.frequencyRange.max);
+    let amplitude = random(this.amplitudeRange.min, this.amplitudeRange.max);
+    let fadeDuration = random(this.fadeDuration.min, this.fadeDuration.max);
+
+    this.bubbles.push(new PepsiBubble(position, velocity, size, color, frequency, amplitude, fadeDuration));
+  }
+}
+
+class PepsiBubble {
+  constructor(position, velocity, size, color, frequency, amplitude, fadeDuration) {
+    this.position = position;
+    this.velocity = velocity;
+    this.size = size;
+    this.color = color;
+    this.frequency = frequency;
+    this.amplitude = amplitude;
+    this.phase = random(0,PI);
+    this.bubbleTime = 0;
+    this.fadeDuration = fadeDuration;
+  }
+
+  update() {
+    // Update the timer on the bubble
+    this.bubbleTime += deltaTime/1000;
+
+    // Move the bubble based on the velocity and sine wave
+    let bubbleMovement = createVector(this.velocity.x, this.velocity.y);
+
+    // Calculate the X movement from a sine wave
+    let xOffset = mathUtil.sine(this.bubbleTime, this.frequency, this.amplitude, this.phase, 0);
+
+    // Add the sine to the velocity offset
+    bubbleMovement.x += xOffset;
+
+    // Update the position
+    this.position.add(bubbleMovement);
+  }
+
+  draw() {
+    this.update();
+
+    noStroke();
+    fill(this.color);
+
+    circle(this.position.x, this.position.y, round(this.getBubbleSize()));
+  }
+
+  // Calculates the current size of the bubble based on the fade duration
+  getBubbleSize() {
+    let bubbleDuration = mathUtil.clamp(this.fadeDuration - this.bubbleTime, 0, this.fadeDuration);
+
+    return (bubbleDuration/this.fadeDuration) * this.size;
+  }
+}

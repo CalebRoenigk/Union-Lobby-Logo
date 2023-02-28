@@ -1,3 +1,5 @@
+// noinspection JSPotentiallyInvalidUsageOfThis
+
 var mgr;
 let maskEditor;
 let effectImg;
@@ -1940,13 +1942,13 @@ function Logo_Trains() {
           }
         }
 
-        if (direction == 0) {
+        if (direction === 0) {
           stop = this.manager.stations[currentStation.x - 1][currentStation.y];
           currentStation.y -= 0;
         }
 
-        if (direction == 1) {
-          if (currentStation.y == 0) {
+        if (direction === 1) {
+          if (currentStation.y === 0) {
             // Invert the direction because you are going past the top
             stop = this.manager.stations[currentStation.x - 1][
               currentStation.y + 1
@@ -1960,8 +1962,8 @@ function Logo_Trains() {
           }
         }
 
-        if (direction == -1) {
-          if (currentStation.y == this.manager.stationResolution + 1) {
+        if (direction === -1) {
+          if (currentStation.y === this.manager.stationResolution + 1) {
             // Invert the direction because you are going past the bottom
             stop = this.manager.stations[currentStation.x - 1][
               currentStation.y - 1
@@ -1979,7 +1981,7 @@ function Logo_Trains() {
 
         currentStation.x -= 1;
 
-        if (direction == this.currentTrackingDirection) {
+        if (direction === this.currentTrackingDirection) {
           this.stepsInDirection++;
         } else {
           this.currentTrackingDirection = direction;
