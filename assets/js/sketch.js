@@ -12,7 +12,8 @@ function preload() {
   sceneManager.scenes.push(new PictogramMorpherScene());
   sceneManager.scenes.push(new PepsiBubblerScene());
   sceneManager.scenes.push(new WordClockScene());
-  sceneManager.scenes.push(new PepsiFullBleed());
+  sceneManager.scenes.push(new PepsiFullBleedScene());
+  sceneManager.scenes.push(new PondScene());
   
   // Run the scene manager preload operation
   // TODO: Add option to play video
@@ -2961,7 +2962,7 @@ class TimeText {
 }
 
 // Pepsi Full Bleed Scene
-class PepsiFullBleed extends LobbyScene {
+class PepsiFullBleedScene extends LobbyScene {
   constructor() {
     super('Pepsi Full Bleed', new SceneOptions(false, [], 0));
     this.waveHandler = new WaveHandler();
@@ -3041,5 +3042,930 @@ class WaveRenderer {
       this.points.push(createVector(xSpacing * i, this.verticalOffset));
 
     }
+  }
+}
+
+// Pond Scene
+class PondScene extends LobbyScene {
+  constructor() {
+    super('Pond', new SceneOptions(false, [], 0));
+    this.pondRenderer = new PondRenderer();
+  }
+
+  setup() {
+    this.pondRenderer = new PondRenderer();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.pondRenderer.draw();
+  }
+}
+
+class PondRenderer {
+  constructor() {
+    this.fish = [];
+    this.fishCount = 6;
+    this.lillyPads = [];
+    this.lillyPadCount = 24;
+    this.lillyPadMinSize = 30;
+    this.lillyPadMaxSize = 72;
+    this.lillyPadPadding = 100;
+    this.debug = false;
+    this.time = 0;
+  }
+
+  setup() {
+    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
+    randomSeed(year() + month() + day() + hour() + minute() + second());
+    let fishColors = [color('#607D8B'), color('#E79721'), color('#D34B0D'), color('#FCFBCC')];
+    this.fish = [];
+    for(let i = 0; i < this.fishCount; i++)
+    {
+      this.fish.push(new Fish(i,createVector(random(0, width), random(0, height)), this.debug, fishColors[round(random(0, fishColors.length - 1))]));
+    }
+
+    for(let i = 0; i < this.lillyPadCount; i++)
+    {
+      this.lillyPads.push(new LillyPad(createVector(random(this.lillyPadPadding, width - this.lillyPadPadding), random(this.lillyPadPadding, height - this.lillyPadPadding)), random(this.lillyPadMinSize,this.lillyPadMaxSize), this.debug, this.lillyPadMinSize, this.lillyPadMaxSize));
+    }
+  }
+
+  draw() {
+    background(color('#00BCD4'));
+    this.time += deltaTime / 1000;
+    let fishPositions = [];
+    // Update and Draw Shadows
+    for(let i = 0; i < this.fishCount; i++)
+    {
+      this.fish[i].update(this.time);
+      fishPositions.push(this.fish[i].position);
+      this.fish[i].render('shadow');
+    }
+
+    // Update and Draw Lilly Shadows
+    for(let i = 0; i < this.lillyPadCount; i++)
+    {
+      this.lillyPads[i].update(fishPositions);
+      this.lillyPads[i].render('shadow');
+    }
+
+    // Lighten the shadows
+    background(color('rgba(0,188,212, 0.75)'));
+
+    // Draw Fish
+    for(let i = 0; i < this.fishCount; i++)
+    {
+      this.fish[i].render('diffuse');
+    }
+
+    // Draw the Lillies
+    for(let i = 0; i < this.lillyPadCount; i++)
+    {
+      this.lillyPads[i].render('diffuse');
+    }
+  }
+}
+
+class Fish {
+  constructor(index,position, debug, bodyColor) {
+    this.index = index;
+    this.position = position;
+    this.resolution = Clamp(5, 3, 100);
+    this.length = 75;
+
+    this.sightRadius = 75;
+    this.facingSpeed = 0.0625;
+    this.targetMargin = 75;
+    this.targetArea = createVector(-40, 40);
+    this.minMaxTargetRandomTime = createVector(12, 24);
+    this.targetTime = 0;
+    this.targetTimeStart = 0;
+
+    this.baseSpineSpeed = 0.25;
+    this.spineSpeedOffset = -0.2;
+    this.maxSpineStrech = 8;
+    this.spineAmp = 2;
+    this.spineFreq = 2;
+    this.spinePhase = 0;
+    this.spineVertOffset = 0;
+    this.spineSpeed = -3;
+    this.spineSegmentPhase = 0.5
+    this.sineSpeedAmpOffset = 0.25;
+
+    this.headSize = 25;
+    this.tailSize = 0;
+    this.finHeight = 12;
+    this.finWidth = 6;
+    this.finDrag = 3;
+    this.finAnchorOffset = 0;
+    this.finCount = 2;
+    this.finDownScale = 0.75;
+    this.shadowOffset = createVector(12, 20);
+    this.bodyColor = bodyColor;
+    this.finColor = this.getFinColor(bodyColor);
+    this.shadowColor = color('rgba(31,73,135,1)');
+
+    this.target = this.position;
+    this.targetStartDist = 0;
+    this.facing = createVector(1,0).setMag(this.length);
+    this.targetFacing = createVector(1,0).setMag(this.length);
+    this.endpoint = p5.Vector.sub(this.position, this.facing);
+    this.spineTargets = [];
+    this.spine = [];
+    this.spineBodyPoints = [];
+    this.headPoints = [];
+    this.velocity = createVector(0,0);
+    this.speed = 0;
+
+    this.debug = debug;
+    this.targetColor = color('red');
+    this.targetSize = 12;
+    this.visionConeColor = color('magenta');
+    this.facingTargetColor = color('blue');
+    this.facingColor = color('yellow');
+    this.facingVectorGap = 0.75;
+    this.facingSize = 4;
+    this.spineBaseColor = color('black');
+    this.spineTargetColor = color('darkblue');
+    this.spineTargetSize = 4;
+    this.spinePointColor = color('lime');
+    this.bodyPointColor = color('cyan');
+    this.bodyHandleColor = color('darkturquoise');
+    this.bodyPointSize = 2;
+
+    this.getSpineTargets();
+    this.generateSpine();
+    this.updateTarget();
+  }
+
+  // Returns a fin color from a given body color
+  getFinColor(bodyColor)
+  {
+    let newBrightness = round(Clamp(brightness(bodyColor) - 18, 0, 100));
+
+    return color('hsb(' + round(hue(bodyColor)) + ', ' + round(saturation(bodyColor)) + '%, ' + newBrightness + '%)');
+  }
+
+  // Runs after the action timer has hit zero and makes the fish move or wait
+  doAction()
+  {
+    if(random(0, 1) > 0.25)
+    {
+      // Move
+      // Get a new Target
+      this.addTarget();
+
+      // Reset the action timer
+      this.actionTimer = this.moveTime;
+    }
+    else
+    {
+      // Break
+      // Reset the action timer
+      this.actionTimer = this.breakTime
+    }
+  }
+
+  updateTarget()
+  {
+    // Update the target random time
+    this.targetTime -= deltaTime / 1000;
+    if(this.targetTime <= 0)
+    {
+      this.targetTimeStart = random(this.minMaxTargetRandomTime.x, this.minMaxTargetRandomTime.y);
+      this.targetTime = this.targetTimeStart;
+
+      // this.targetOffsetRotation = round(random(-this.targetRandomRotationOffset, this.targetRandomRotationOffset) * 100) / 100;
+      let randomX = randomGaussian(width/2, width/2);
+      let randomY = randomGaussian(height/2, height/2);
+
+      this.target = createVector(randomX, randomY);
+
+      // Clamp the target to the bounds
+      this.target.x = Clamp(this.target.x, this.targetMargin, width - this.targetMargin);
+      this.target.y = Clamp(this.target.y, this.targetMargin, height - this.targetMargin);
+    }
+
+    // Update the facing rotation
+    this.targetFacing = p5.Vector.sub(this.target, this.position).normalize().setMag(this.length);
+
+    // Update the target when the fish reaches the target
+    let distToTarget = p5.Vector.dist(this.position, this.target);
+    if(distToTarget <= 0.5)
+    {
+      this.targetTime = 0;
+      this.updateTarget();
+    }
+  }
+
+  // Updates the fish and then renders
+  update(time)
+  {
+    // Update the target
+    this.updateTarget();
+
+    // Store the last position
+    let lastPosition = createVector(this.position.x, this.position.y);
+
+    // Move towards the target
+    let interpolationValue = (this.targetTimeStart - this.targetTime) / this.targetTimeStart;
+    this.position = p5.Vector.lerp(this.position, this.target, easeInOutSine(interpolationValue));
+
+    // Update the velocity
+    this.velocity = p5.Vector.sub(this.position, lastPosition);
+    // Update the speed
+    this.speed = this.velocity.mag();
+
+    // Update the facing
+    angleMode(RADIANS);
+    let facingHeading = lerp(this.facing.heading(), this.targetFacing.heading(), this.facingSpeed);
+    this.facing.setHeading(facingHeading);
+
+    // Update the endpoint
+    this.endpoint = p5.Vector.sub(this.position, this.facing);
+
+    // Update the spine targets
+    this.getSpineTargets();
+
+    // Update spine
+    this.updateSpine(time);
+
+    // Generate body points
+    this.generateBodyPoints();
+  }
+
+  renderDebug()
+  {
+    // Target
+    noFill();
+    stroke(this.targetColor);
+    strokeWeight(this.targetSize * 0.45);
+
+    point(this.target.x, this.target.y);
+
+    strokeWeight(1);
+
+    line(this.target.x - (this.targetSize / 2), this.target.y, this.target.x + (this.targetSize / 2), this.target.y);
+    line(this.target.x, this.target.y - (this.targetSize / 2), this.target.x, this.target.y + (this.targetSize / 2));
+
+    strokeWeight(1);
+
+    line(this.position.x, this.position.y, this.target.x, this.target.y);
+
+    let targetRaw = p5.Vector.sub(this.target, this.position);
+
+    noStroke();
+    fill(this.targetColor);
+    textSize(8);
+    textAlign(CENTER);
+
+    text('⊙ M: ' + (round(targetRaw.mag())).toString(), this.target.x, this.target.y + this.targetSize);
+
+    // Vision Cone
+    noFill();
+    stroke(this.visionConeColor);
+
+    let facingAngle = this.facing.heading() * (180 / PI);
+    let startAngle = (this.targetArea.x + facingAngle) * (PI / 180);
+    let endAngle = (this.targetArea.y + facingAngle) * (PI / 180);
+
+    arc(this.position.x, this.position.y, this.sightRadius * 2, this.sightRadius * 2, startAngle, endAngle, PIE);
+
+    let arcMiddlePoint = p5.Vector.add(this.facing, this.position);
+    let arcLeftPoint = p5.Vector.sub(arcMiddlePoint, this.position).rotate(this.targetArea.x * (PI / 180)).add(this.position);
+    let arcLeftOffsetPoint = p5.Vector.sub(arcLeftPoint, this.position).setMag(20).add(arcLeftPoint);
+    let arcRightPoint = p5.Vector.sub(arcMiddlePoint, this.position).rotate(this.targetArea.y * (PI / 180)).add(this.position);
+    let arcRightOffsetPoint = p5.Vector.sub(arcRightPoint, this.position).setMag(20).add(arcRightPoint);
+
+    strokeWeight(4);
+    point(arcMiddlePoint.x, arcMiddlePoint.y);
+    point(arcLeftPoint.x, arcLeftPoint.y);
+    point(arcRightPoint.x, arcRightPoint.y);
+
+    noStroke();
+    fill(this.visionConeColor);
+
+    text(round((arcLeftPoint.sub(this.position).heading() * (180 / PI))).toString() + '°', arcLeftOffsetPoint.x, arcLeftOffsetPoint.y);
+    text(round((arcRightPoint.sub(this.position).heading() * (180 / PI))).toString() + '°', arcRightOffsetPoint.x, arcRightOffsetPoint.y);
+
+    noFill();
+    strokeWeight(1);
+
+    // Facing Vectors
+    // Facing Target
+    stroke(this.facingTargetColor);
+
+    let facingTargetTemp = p5.Vector.add(this.targetFacing, this.position);
+    let facingTargetPositionOffset = createVector(this.targetFacing.x, this.targetFacing.y).setMag(this.sightRadius * this.facingVectorGap).add(this.position);
+
+    line(facingTargetPositionOffset.x, facingTargetPositionOffset.y, facingTargetTemp.x, facingTargetTemp.y);
+
+    strokeWeight(this.facingSize);
+
+    point(facingTargetTemp.x, facingTargetTemp.y);
+
+    let facingTargetPointOffset = p5.Vector.sub(facingTargetTemp, this.position).setMag(20).add(facingTargetTemp);
+
+    noStroke();
+    fill(this.facingTargetColor);
+
+    text(round(facingTargetTemp.sub(this.position).heading() * (180 / PI)).toString() + '°', facingTargetPointOffset.x, facingTargetPointOffset.y);
+
+    noFill();
+    strokeWeight(1);
+
+    // Facing
+    stroke(this.facingColor);
+    strokeWeight(1);
+
+    let facingTemp = p5.Vector.add(this.facing, this.position);
+    let facingPositionOffset = createVector(this.facing.x, this.facing.y).setMag(this.sightRadius * this.facingVectorGap).add(this.position);
+
+    line(facingPositionOffset.x, facingPositionOffset.y, facingTemp.x, facingTemp.y);
+
+    strokeWeight(this.facingSize);
+
+    point(facingTemp.x, facingTemp.y);
+
+    // Spine Base
+    stroke(this.spineBaseColor);
+    strokeWeight(1);
+
+    let facingTempNegative = p5.Vector.sub(this.position, this.facing);
+
+    line(this.position.x, this.position.y,  facingTempNegative.x, facingTempNegative.y);
+
+    // Spine Targets
+    stroke(this.spineTargetColor);
+    strokeWeight(this.spineTargetSize);
+
+    for(let i = 0; i < this.spineTargets.length; i++)
+    {
+      point(this.spineTargets[i].x, this.spineTargets[i].y);
+    }
+
+    // Spine
+    stroke(this.spinePointColor);
+
+    for(let i = 0; i < this.spine.length; i++)
+    {
+      point(this.spine[i].x, this.spine[i].y);
+    }
+
+    // Body Points
+    // Head
+    stroke(this.bodyHandleColor);
+    strokeWeight(1);
+
+    line(this.headPoints[0][0].x, this.headPoints[0][0].y, this.headPoints[0][1].x, this.headPoints[0][1].y);
+    line(this.headPoints[2][0].x, this.headPoints[2][0].y, this.headPoints[2][1].x, this.headPoints[2][1].y);
+
+    stroke(this.bodyPointColor);
+    strokeWeight(this.bodyPointSize);
+
+    point(this.headPoints[0][1].x, this.headPoints[0][1].y);
+    point(this.headPoints[1].x, this.headPoints[1].y);
+    point(this.headPoints[2][1].x, this.headPoints[2][1].y);
+
+    // Body
+    for(let i = 0; i < this.spineBodyPoints.length; i++)
+    {
+      let leftPoint = this.spineBodyPoints[i][0];
+      let rightPoint = this.spineBodyPoints[i][1];
+
+      point(leftPoint.x, leftPoint.y);
+      point(rightPoint.x, rightPoint.y);
+    }
+  }
+
+  // Renders the fish
+  render(pass)
+  {
+    switch(pass)
+    {
+      case 'diffuse':
+      default:
+        // Render the body
+        this.renderBody();
+
+        // Debug
+        if(this.debug)
+        {
+          this.renderDebug();
+        }
+        break;
+      case 'shadow':
+        // Render the shadow
+        this.renderShadow();
+        break;
+    }
+  }
+
+  generateBodyPoints()
+  {
+    this.spineBodyPoints = [];
+    // Iterate over the spine, adding 2 points for each spine point (1 for each side of the body)
+    for(let i = 0; i < this.spine.length - 1; i++)
+    {
+      let bodyWidthAtSpinePoint = lerp(this.headSize, this.tailSize, i / this.spine.length);
+      let thisSpinePoint = this.spine[i];
+      let nextSpinePoint = this.spine[i+1];
+      let leftPoint = p5.Vector.rotate(p5.Vector.sub(nextSpinePoint, thisSpinePoint), HALF_PI).setMag(bodyWidthAtSpinePoint/2).add(this.spine[i]);
+      let rightPoint = p5.Vector.rotate(p5.Vector.sub(nextSpinePoint, thisSpinePoint), -HALF_PI).setMag(bodyWidthAtSpinePoint/2).add(this.spine[i]);
+      this.spineBodyPoints.push([leftPoint, rightPoint]);
+    }
+
+    // Right Point
+    let rightPoint = this.spineBodyPoints[0][1];
+    let facingRightTemp = p5.Vector.add(this.facing, -rightPoint).setMag(this.headSize);
+    let rightControl = p5.Vector.add(rightPoint, facingRightTemp);
+
+    // Left Point
+    let leftPoint = this.spineBodyPoints[0][0];
+    let facingLeftTemp = p5.Vector.add(this.facing, -leftPoint).setMag(this.headSize);
+    let leftControl = p5.Vector.add(leftPoint, facingLeftTemp);
+
+    // Middle Point
+    let middlePoint = p5.Vector.lerp(leftControl, rightControl, 0.5);
+
+    this.headPoints = [[rightPoint, rightControl], middlePoint, [leftPoint, leftControl]];
+  }
+
+  renderBody(offset, fillColor)
+  {
+    // Set the offset if none exists
+    if(offset == null || offset === undefined)
+    {
+      offset = createVector(0,0);
+    }
+
+    // Iterate over the body points and connect them into the body shape
+    beginShape();
+
+    noStroke();
+    if(fillColor == null || fillColor === undefined)
+    {
+      fill(this.bodyColor);
+    }
+    else
+    {
+      fill(fillColor);
+    }
+
+    if(this.debug)
+    {
+      noFill();
+      stroke(this.bodyColor);
+      strokeWeight(1);
+    }
+
+    for(let i = 0; i < (this.spineBodyPoints.length * 2) + 1; i++)
+    {
+      if(i < this.spineBodyPoints.length)
+      {
+        // Left Side
+        vertex(this.spineBodyPoints[i][0].x + offset.x, this.spineBodyPoints[i][0].y + offset.y);
+      }
+      if(i == this.spineBodyPoints.length)
+      {
+        // Tail Point
+        vertex(this.spine[this.spine.length - 1].x + offset.x, this.spine[this.spine.length - 1].y + offset.y);
+      }
+      if(i > this.spineBodyPoints.length)
+      {
+        // Right Side
+        let iterationIndex = this.spineBodyPoints.length - ((i + 1) % (this.spineBodyPoints.length + 1));
+        vertex(this.spineBodyPoints[iterationIndex][1].x + offset.x, this.spineBodyPoints[iterationIndex][1].y + offset.y);
+      }
+    }
+
+    // Draw the head
+    // Curve
+    bezierVertex(this.headPoints[0][1].x + offset.x, this.headPoints[0][1].y + offset.y, this.headPoints[2][1].x + offset.x, this.headPoints[2][1].y + offset.y, this.headPoints[2][0].x + offset.x, this.headPoints[2][0].y + offset.y);
+
+    endShape(CLOSE);
+
+    // Add the fins
+    this.renderFins(offset, fillColor);
+  }
+
+  renderFins(offset, fillColor)
+  {
+    // Set the offset if none exists
+    if(offset == null || offset === undefined)
+    {
+      offset = createVector(0,0);
+    }
+
+    let finInterval = Clamp(ceil((this.spineBodyPoints.length - 1) / this.finCount), 1, 100);
+    for(let i = 0; i < Clamp(this.finCount, 0, this.spineBodyPoints.length - 1); i++)
+    {
+      // Get the fin anchors
+      let finAnchors = i * finInterval;
+      finAnchors = Clamp(finAnchors + this.finAnchorOffset, 0, this.spineBodyPoints.length - 1);
+      let finDownScale = pow(this.finDownScale, i);
+
+      // Left
+      let leftOffset = createVector(this.facing.x, this.facing.y).rotate(HALF_PI).setMag(this.finWidth * finDownScale);
+      let finDrag = p5.Vector.sub(this.spineBodyPoints[finAnchors + 1][0], this.spineBodyPoints[finAnchors][0]).setMag(this.finDrag);
+
+      let leftA = this.spineBodyPoints[finAnchors][0];
+      let leftB = p5.Vector.sub(this.spineBodyPoints[finAnchors + 1][0], this.spineBodyPoints[finAnchors][0]).setMag(this.finHeight * finDownScale).add(leftA);
+      let leftC = p5.Vector.sub(leftB, leftOffset).add(finDrag * finDownScale);
+
+      // Right
+      let rightOffset = createVector(this.facing.x, this.facing.y).rotate(-HALF_PI).setMag(this.finWidth * finDownScale);
+
+      let rightA = this.spineBodyPoints[finAnchors][1];
+      let rightB = p5.Vector.sub(this.spineBodyPoints[finAnchors + 1][1], this.spineBodyPoints[finAnchors][1]).setMag(this.finHeight * finDownScale).add(rightA);
+      let rightC = p5.Vector.sub(rightB, rightOffset).add(finDrag * finDownScale);
+
+      noStroke();
+      if(fillColor == null || fillColor === undefined)
+      {
+        fill(this.finColor);
+      }
+      else
+      {
+        fill(fillColor);
+      }
+
+      if(this.debug)
+      {
+        noFill();
+        stroke(this.finColor);
+        strokeWeight(1);
+      }
+
+      triangle(leftA.x + offset.x, leftA.y + offset.y, leftB.x + offset.x, leftB.y + offset.y, leftC.x + offset.x, leftC.y + offset.y);
+      triangle(rightA.x + offset.x, rightA.y + offset.y, rightB.x + offset.x, rightB.y + offset.y, rightC.x + offset.x, rightC.y + offset.y);
+    }
+  }
+
+  renderShadow()
+  {
+    // Render the body
+    this.renderBody(this.shadowOffset, this.shadowColor);
+  }
+
+  getSpineTargets()
+  {
+    this.spineTargets = [];
+    this.spineTargets.push(this.position);
+
+    // Iterate over the resolution between the endpoint and head and create spine targets
+    for(let i = 0; i < this.resolution - 2; i++)
+    {
+      this.spineTargets.push(p5.Vector.lerp(this.position, this.endpoint, (i + 1) / (this.resolution - 1)));
+    }
+
+    this.spineTargets.push(this.endpoint);
+  }
+
+  generateSpine()
+  {
+    // Iterate over the spine targets and create spine
+    for(let i = 0; i < this.spineTargets.length; i++)
+    {
+      this.spine.push(createVector(this.spineTargets[i].x, this.spineTargets[i].y));
+    }
+  }
+
+  updateSpine(time)
+  {
+    // Iterate over the spine and lerp them towards their targets
+    for(let i = 0; i < this.spine.length; i++)
+    {
+      let targetPosition = this.spineTargets[i];
+      let lerpSpeed = this.baseSpineSpeed + ((this.spineSpeedOffset / this.spine.length) * (i + 1));
+
+      this.spine[i].lerp(targetPosition, lerpSpeed);
+    }
+
+    // Lock the length between the spine points
+    let spineSegmentLength = this.length / this.resolution;
+    let maxSpineSegmentLength = spineSegmentLength + this.maxSpineStrech;
+    let minSpineSegmentLength = spineSegmentLength - this.maxSpineStrech;
+    for(let i = this.spine.length - 1; i > 0; i--)
+    {
+      let currentSpinePoint = this.spine[i];
+      let nextSpinePoint = this.spine[i-1];
+
+      // Too far away, correct the positioning
+      if(p5.Vector.dist(currentSpinePoint, nextSpinePoint) > maxSpineSegmentLength)
+      {
+        this.spine[i] = p5.Vector.sub(currentSpinePoint, nextSpinePoint).setMag(maxSpineSegmentLength).add(nextSpinePoint);
+        continue;
+      }
+
+      // Too close, correct the positioning
+      if(p5.Vector.dist(currentSpinePoint, nextSpinePoint) < minSpineSegmentLength)
+      {
+        this.spine[i] = p5.Vector.sub(currentSpinePoint, nextSpinePoint).setMag(minSpineSegmentLength).add(nextSpinePoint);
+        continue;
+      }
+    }
+
+    // Offset the spine points with a sine wave
+    for(let i = 0; i < this.spine.length; i++)
+    {
+      let currentSpinePoint = this.spine[i];
+      let currentDistanceToTarget = p5.Vector.dist(currentSpinePoint, this.target) / 50;
+      let sineOffset = SineWave(this.spineAmp + (this.sineSpeedAmpOffset * this.speed), this.spineFreq, this.spinePhase + currentDistanceToTarget, this.spineVertOffset, this.spineSpeed, time) * (i / this.spine.length);
+      let offsetVector = p5.Vector.rotate(this.facing, HALF_PI).normalize().mult(sineOffset);
+
+      this.spine[i].add(offsetVector);
+    }
+  }
+}
+
+class LillyPad {
+  constructor(position, size, debug, lillyPadMinSize, lillyPadMaxSize) {
+    this.position = position;
+    this.size = size;
+    this.rotation = round(random(0, 360));
+    this.creaseCount = round(random(3, 7));
+    this.hasLilly = 1 - random(0,1) > 0.7;
+
+    this.basePosition = createVector(this.position.x, this.position.y);
+    this.targetPosition = createVector(this.position.x, this.position.y);
+    this.cutAngle = 12;
+    this.centerSize = this.size * 0.25;
+    this.creaseMaxDisplacement = (360 / this.creaseCount) * 0.25;
+    this.creaseSize = 0.7;
+    this.lillyLayers = 4;
+    this.lillySize = this.size * 0.625;
+    this.lillyBasePetals = 6;
+    this.lillyPetalWidth = 2;
+
+    this.interactionRadius = (this.size / 2) * 1.5;
+    this.maxDisplacement = 5 * map(this.size, lillyPadMinSize, lillyPadMaxSize, 1, 2);
+    this.interactionSpeed = 0.05;
+    this.displacing = false;
+
+    this.creases = [];
+    this.lilly = createVector(0,0);
+
+    this.creaseWeight = 2;
+    this.padColor = color('#8BC34A');
+    this.creaseColor = color('#7FB73E');
+    this.shadowOffset = createVector(12, 20);
+    this.shadowColor = color('rgba(31,73,135,1)');
+    this.lillyCenterColor = color('#F5E355');
+    this.lillyPetalColor = color('#F4F6D9');
+
+    this.debug = debug;
+    this.interactionColor = color('magenta');
+    this.interactionActiveColor = color('pink');
+    this.targetSize = 4;
+    this.targetColor = color('red');
+    this.baseColor = color('yellow');
+
+    this.generateCreases();
+
+    if(this.hasLilly)
+    {
+      this.generateLilly();
+    }
+  }
+
+  generateCreases()
+  {
+    // Iterate over the creases, creating crease points
+    let startCreasePoint = createVector(this.creaseSize * (this.size / 2), 0);
+    let creaseRotationInterval = (360 / (this.creaseCount + 1));
+    for(let i = 0; i < this.creaseCount; i++)
+    {
+      angleMode(DEGREES);
+      let offsetDisplacement = round(random(-this.creaseMaxDisplacement, this.creaseMaxDisplacement));
+      let creaseRotation = Clamp(((creaseRotationInterval * i) + offsetDisplacement) * (PI / 180), 0, 360 - (this.cutAngle * 2));
+      let creasePoint = p5.Vector.rotate(startCreasePoint, creaseRotation);
+      this.creases.push(creasePoint);
+    }
+  }
+
+  generateLilly()
+  {
+    // Get a random position for the lilly
+    this.lilly = createVector(random(-this.size/4,this.size/4), random(-this.size/4,this.size/4));
+  }
+
+  update(fishPositions)
+  {
+    // Iterate over the fish positions
+    let displacement = createVector(0,0);
+    for(let i = 0; i < fishPositions.length; i++)
+    {
+      // If a fish position is within the interaction radius, move the pad
+      if(p5.Vector.dist(fishPositions[i], this.position) <= this.interactionRadius)
+      {
+        let displacementAmount = map(p5.Vector.dist(fishPositions[i], this.position), 0, this.interactionRadius, this.maxDisplacement, 0);
+        let displacementVector = p5.Vector.sub(this.position, fishPositions[i]).setMag(displacementAmount);
+        displacement.add(displacementVector);
+      }
+    }
+
+    if(displacement.x != 0 || displacement.y != 0)
+    {
+      this.displacing = true;
+    }
+    else
+    {
+      this.displacing = false;
+    }
+
+    // Get new target
+    this.targetPosition.add(displacement).lerp(this.basePosition, this.interactionSpeed);
+
+    // Get new position
+    this.position.lerp(this.targetPosition, this.interactionSpeed);
+  }
+
+  render(pass)
+  {
+    switch(pass)
+    {
+      case 'diffuse':
+      default:
+        // Render the pad
+        this.renderPad();
+
+        // Debug
+        if(this.debug)
+        {
+          this.renderDebug();
+        }
+        break;
+      case 'shadow':
+        // Render the shadow
+        this.renderShadow();
+        break;
+    }
+  }
+
+  renderShadow()
+  {
+    this.renderPad(this.shadowOffset, this.shadowColor);
+  }
+
+  renderPad(offset, fillColor)
+  {
+    // Set the offset if none exists
+    if(offset == null || offset === undefined)
+    {
+      offset = createVector(0,0);
+    }
+
+    // Draw the arc
+    if(fillColor == null || fillColor === undefined)
+    {
+      fillColor = this.padColor;
+    }
+    noStroke();
+    fill(fillColor);
+
+    if(this.debug)
+    {
+      noFill();
+      stroke(fillColor);
+      strokeWeight(1);
+    }
+
+    arc(this.position.x + offset.x, this.position.y + offset.y, this.size, this.size, (0 + this.rotation) * (PI/180), ((360 - this.cutAngle) + this.rotation) * (PI/180));
+
+    // Draw the center fill
+    if(!this.debug && (offset.x == 0 && offset.y == 0))
+    {
+      noFill();
+      stroke(fillColor);
+      strokeWeight(this.centerSize);
+
+      point(this.position.x + offset.x, this.position.y + offset.y);
+    }
+
+    // Draw the creases
+    if(offset.x == 0 && offset.y == 0)
+    {
+      noFill();
+      stroke(this.creaseColor);
+      strokeWeight(this.creaseWeight);
+
+      for(let i = 0; i < this.creases.length; i++)
+      {
+        let creaseEndpoint = p5.Vector.add(this.creases[i], this.position);
+
+        line(this.position.x, this.position.y, creaseEndpoint.x, creaseEndpoint.y);
+      }
+    }
+
+    if(this.hasLilly)
+    {
+      this.renderLilly(offset, fillColor);
+    }
+  }
+
+  renderLilly(offset, fillColor)
+  {
+    // Petals
+    // Iterate over the layers
+    let layerSizeInterval = this.lillySize / this.lillyLayers;
+    for(let l = this.lillyLayers; l > 0; l--)
+    {
+      // Get the color of the layer
+      let layerColor = lerpColor(this.lillyCenterColor, this.lillyPetalColor, l / (this.lillyLayers - 1));
+
+      if(!(offset.x == 0 && offset.y == 0))
+      {
+        layerColor = fillColor;
+      }
+
+      // Iterate over the petals in the layer
+      let layerPetals = this.lillyBasePetals;
+      if(l == this.lillyLayers - 1)
+      {
+        layerPetals = this.lillyBasePetals * 1;
+      }
+
+      let centerPoint = p5.Vector.add(this.position, this.lilly);
+      let petalRotationInterval = 360 / layerPetals;
+      let layerRotation = (l % 2) * 45;
+      let layerSize = layerSizeInterval * (l + 1);
+      let petalWidth = petalRotationInterval * this.lillyPetalWidth;
+
+      for(let p = 0; p < (layerPetals + 1); p++)
+      {
+        let petalRotation = ((petalRotationInterval * p) + layerRotation) * (180/PI);
+        let petalEndPoint = createVector(layerSize/2, 0).rotate(petalRotation).add(centerPoint).add(offset);
+        let petalMidPoint = createVector((layerSize/2) / 2, 0).rotate(petalRotation);
+        let petalLeftControl = p5.Vector.rotate(petalMidPoint, -(petalWidth/2) * (PI/180)).add(this.position).add(this.lilly).add(offset);
+        let petalRightControl = p5.Vector.rotate(petalMidPoint, (petalWidth/2) * (PI/180)).add(this.position).add(this.lilly).add(offset);
+
+        noStroke();
+        fill(layerColor);
+
+        if(this.debug)
+        {
+          if(l == this.lillyLayers)
+          {
+            stroke(layerColor);
+            strokeWeight(1);
+            noFill();
+          }
+          else
+          {
+            noFill();
+            noStroke();
+          }
+        }
+
+        beginShape();
+        vertex(centerPoint.x, centerPoint.y);
+        quadraticVertex(centerPoint.x, centerPoint.y, petalLeftControl.x, petalLeftControl.y);
+        vertex(petalEndPoint.x, petalEndPoint.y);
+        quadraticVertex(petalRightControl.x, petalRightControl.y, centerPoint.x, centerPoint.y);
+        endShape();
+      }
+    }
+
+    // Center Point
+    if(offset.x == 0 && offset.y == 0)
+    {
+      noFill();
+      stroke(this.lillyCenterColor);
+      strokeWeight(this.lillySize * 0.25);
+
+      point(this.lilly.x + this.position.x, this.lilly.y + this.position.y);
+    }
+  }
+
+  renderDebug()
+  {
+    // Interaction Radius
+    noFill();
+    stroke(this.interactionColor);
+    strokeWeight(1);
+
+    if(this.displacing)
+    {
+      stroke(this.interactionActiveColor);
+    }
+
+    circle(this.position.x, this.position.y, this.interactionRadius*2);
+
+    // Target
+    stroke(this.targetColor);
+
+    line(this.position.x, this.position.y, this.targetPosition.x, this.targetPosition.y);
+
+    strokeWeight(this.targetSize);
+
+    point(this.targetPosition.x, this.targetPosition.y);
+
+    // Base
+    stroke(this.baseColor);
+
+    point(this.basePosition.x, this.basePosition.y);
   }
 }
