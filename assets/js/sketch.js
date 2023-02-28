@@ -2654,7 +2654,7 @@ class WordClock {
     this.renderDebug = false;
 
     // Guides
-    this.marginTop = 55;
+    this.marginTop = 52;
     this.marginLeft = 52;
     this.marginRight = 48;
     this.marginBottom = 50;
@@ -2705,7 +2705,7 @@ class WordClock {
 
     // Display
     this.textActiveColor = color("white");
-    this.textInactiveColor = color("#214ade"); // rgba(255,255,255,0.25) // TODO: CHANGE THIS BACK AFTER 03/08/2023
+    this.textInactiveColor = color("rgba(33,74,222,0.25)"); // rgba(255,255,255,0.25) // TODO: CHANGE THIS BACK AFTER 03/08/2023
     this.textSize = 50;
     this.textRowHeight = min(
         (height - (this.marginTop + this.marginBottom)) /
