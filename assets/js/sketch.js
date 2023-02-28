@@ -2656,7 +2656,7 @@ class WordClock {
     this.renderDebug = false;
 
     // Guides
-    this.marginTop = 52;
+    this.marginTop = 35;
     this.marginLeft = 52;
     this.marginRight = 48;
     this.marginBottom = 50;
