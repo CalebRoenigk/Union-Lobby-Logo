@@ -1917,6 +1917,7 @@ class SquareFunfetti extends Funfetti {
 }
 
 // Webding Scene
+// TODO: Currently completely broken
 class WebdingScene extends LobbyScene {
   constructor() {
     super('Webdings');
@@ -2642,6 +2643,7 @@ class PepsiBubble {
 }
 
 // Clock Scene
+// TODO: Currently broken, noticed issues: "It is" does not appear at 10am, "eleven" does not appear during "half past eleven"
 class WordClockScene extends LobbyScene {
   constructor() {
     super('Word Clock', new SceneOptions(false, [], 0));
@@ -3126,7 +3128,6 @@ class PondScene extends LobbyScene {
   }
 }
 
-// TODO: THIS ONE IS BROKEN SOMETHING ABOUT UPDATE
 class PondRenderer {
   constructor() {
     this.fish = [];
