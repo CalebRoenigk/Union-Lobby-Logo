@@ -3071,6 +3071,7 @@ class WavyDots {
   }
 
   draw() {
+    background(22);
     this.time += deltaTime/1000;
 
     let spacing = width/(this.resoultion-1);
