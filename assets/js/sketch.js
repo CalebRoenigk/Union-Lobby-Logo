@@ -274,6 +274,12 @@ class P5Util {
     // console.log('vector', vector, ('(' + [vector.x,vector.y].join(',') + ')'));
     return '(' + [vector.x,vector.y].join(',') + ')';
   }
+
+  // Returns a sampled sine wave value with additional parameters compared to mathUtil sine
+  sineWave(amplitude, frequency, phase, verticalOffset, speed, time) {
+    let waveTime = time * speed;
+    return amplitude * Math.sin((waveTime + phase) * frequency) + verticalOffset;
+  }
 }
 
 // Custom Data Constructs
@@ -3328,7 +3334,7 @@ class Fish {
 
     // Move towards the target
     let interpolationValue = (this.targetTimeStart - this.targetTime) / this.targetTimeStart;
-    this.position = p5.Vector.lerp(this.position, this.target, easeInOutSine(interpolationValue));
+    this.position = p5.Vector.lerp(this.position, this.target, easeUtil.easeInOutSine(interpolationValue));
 
     // Update the velocity
     this.velocity = p5.Vector.sub(this.position, lastPosition);
@@ -3730,7 +3736,7 @@ class Fish {
     {
       let currentSpinePoint = this.spine[i];
       let currentDistanceToTarget = p5.Vector.dist(currentSpinePoint, this.target) / 50;
-      let sineOffset = SineWave(this.spineAmp + (this.sineSpeedAmpOffset * this.speed), this.spineFreq, this.spinePhase + currentDistanceToTarget, this.spineVertOffset, this.spineSpeed, time) * (i / this.spine.length);
+      let sineOffset = p5Util.sineWave(this.spineAmp + (this.sineSpeedAmpOffset * this.speed), this.spineFreq, this.spinePhase + currentDistanceToTarget, this.spineVertOffset, this.spineSpeed, time) * (i / this.spine.length);
       let offsetVector = p5.Vector.rotate(this.facing, HALF_PI).normalize().mult(sineOffset);
 
       this.spine[i].add(offsetVector);
