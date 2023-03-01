@@ -15,6 +15,7 @@ function preload() {
   sceneManager.scenes.push(new PepsiFullBleedScene());
   sceneManager.scenes.push(new PolkaWaveScene());
   sceneManager.scenes.push(new PondScene());
+  sceneManager.scenes.push(new BoxOfSpringsScene())
   
   // Run the scene manager preload operation
   // TODO: Add option to play video
@@ -4023,5 +4024,269 @@ class LillyPad {
     stroke(this.baseColor);
 
     point(this.basePosition.x, this.basePosition.y);
+  }
+}
+
+// Box Of Springs Scene
+class BoxOfSpringsScene extends LobbyScene {
+  constructor() {
+    super('Box Of Springs', new SceneOptions(false, [], 0));
+    this.springBox = new SpringBox();
+  }
+
+  setup() {
+    this.springBox = new SpringBox();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.springBox.draw();
+  }
+}
+
+class SpringBox {
+  constructor(count = 24) {
+    this.count = count;
+    this.springs = [];
+
+    // Spring Settings
+    this.springMass = 0.4;
+    this.springDamp = 0.92;
+    this.palette = ["#abcd5e", "#29ac9f", "#14976b", "#b3dce0", "#62b6de", "#2b67af", "#ffd400", "#f589a3", "#f0502a", "#fc8405"];
+
+    // Avoider
+    this.avoiders = [createVector(width/2, height/2), createVector(width/2, height/2)];
+    this.avoidRadii = [75,75];
+    this.time = 0;
+    this.noiseFrequency = 0.25;
+
+    this.debug = false;
+
+    this.generateSprings();
+  }
+
+  update() {
+    this.time += deltaTime/1000;
+
+    // Update the avoider positions
+    let noiseTime = this.noiseFrequency * this.time;
+    let avoiderSpacing = 109;
+    for(let i=0; i < this.avoiders.length; i++) {
+      let x = (noise(noiseTime+width+(avoiderSpacing*i))*2)-1;
+      let y = (noise(noiseTime-height+(avoiderSpacing*i))*2)-1;
+
+      this.avoiders[i] = createVector(width/2, height/2).add(createVector(x,y).mult(min(width, height)));
+      let baseRadius = 75;
+      this.avoidRadii[i] = round(baseRadius * sin(((noiseTime+(avoiderSpacing*i)) + 0.318) * 0.971) + (baseRadius*2));
+    }
+  }
+
+  draw() {
+    this.update();
+
+    background(0);
+
+    if(this.debug) {
+      let avoiderIndex = 0;
+      this.avoiders.forEach(avoider => {
+        // Avoider
+        stroke('magenta');
+        strokeWeight(2);
+
+        point(avoider.x, avoider.y);
+
+        // Avoider Radius
+        strokeWeight(1);
+
+        circle(avoider.x, avoider.y, this.avoidRadii[avoiderIndex]);
+
+        avoiderIndex++;
+      })
+    }
+
+    this.springs.forEach(spring => spring.draw());
+  }
+
+  // Create the base springs on the canvas
+  generateSprings() {
+    let spacing = createVector(width/(this.count-1), height/(this.count-1));
+    for(let x=0; x < this.count; x++) {
+      for(let y=0; y < this.count; y++) {
+        let baseColor = color(this.palette[round(random(0,this.palette.length-1))]);
+        let highlightColor = color('#fffbe6');
+
+        this.springs.push(new SpringParticle(this, createVector(spacing.x * x, spacing.y * y), createVector(spacing.x * x, spacing.y * y), this.springMass, this.springDamp, baseColor, highlightColor));
+      }
+    }
+  }
+
+  // Returns the maximum avoidance radius
+  getMaxAvoidRadius() {
+    let maxRadius = this.avoidRadii[0];
+    this.avoidRadii.forEach(radius => {
+      maxRadius = min(radius, maxRadius);
+    })
+    return maxRadius;
+  }
+}
+
+class SpringParticle {
+  constructor(box, position, target, mass, damp, baseColor, highlightColor, k = 0.2) {
+    this.box = box;
+    this.position = position;
+    this.target = target;
+    this.velocity = createVector(0,0);
+
+    // Spring Properties
+    this.mass = mass;  // Mass
+    this.k = k;  // Spring constant
+    this.damp = damp;  // Damping
+
+    // Spring simulation variables
+    this.acceleration = 0;  // Acceleration
+    this.force = 0;  // Force
+
+    this.baseColor = baseColor;
+    this.highlightColor = highlightColor;
+
+    // Trail
+    this.trailInterval = 0.03;
+    this.trailTimer = 0;
+    this.trailSamples = 12;
+    this.trailBase = [];
+    this.trailSmoothed = [];
+
+    this.debug = false;
+  }
+
+  update() {
+    // Get the vector towards the target
+    let targetVector = p5.Vector.sub(this.target, this.position);
+
+    // Get the avoidance vector
+    let avoidanceVector = this.getAvoidiance();
+
+    // Interpolate between the two vectors based on the length of the avoidance vector
+    let movementVector = p5.Vector.lerp(targetVector, avoidanceVector, avoidanceVector.mag()/this.box.getMaxAvoidRadius());
+
+    let targetForce = p5.Vector.add(movementVector.mult(deltaTime/1000), this.position);
+
+    this.force = -this.k * (this.position.y - targetForce.y);  // f=-ky
+    this.acceleration = this.force / this.mass;  // Set the acceleration, f=ma == a=f/m
+    let velY = this.damp * (this.velocity.y + this.acceleration);  // Calculate the velocity on the Y
+
+    this.force = -this.k * (this.position.x - targetForce.x);  // f=-ky
+    this.acceleration = this.force / this.mass;  // Set the acceleration, f=ma == a=f/m
+    let velX = this.damp * (this.velocity.x + this.acceleration);  // Calculate the velocity on the X
+
+    // Update the velocity and position
+    this.velocity = createVector(velX, velY);
+    this.position.add(this.velocity);
+
+    this.trailTimer -= deltaTime/1000;
+
+    if(this.trailTimer <= 0) {
+      this.trailTimer = this.trailInterval;
+      this.trailBase.push(createVector(this.position.x, this.position.y));
+
+      if(this.trailBase.length > this.trailSamples) {
+        this.trailBase.shift();
+      }
+    }
+
+    // Smooth the trail
+    this.trailSmoothed = [];
+    for(let i=0; i < this.trailBase.length; i++) {
+      this.trailSmoothed.push(createVector(this.trailBase[i].x, this.trailBase[i].y).lerp(this.target, ((this.trailSamples - i)/2)/this.trailSamples));
+    }
+  }
+
+  draw() {
+    this.update();
+
+    // Debug
+    if(this.debug) {
+      // Target
+      noFill();
+      stroke('red');
+      strokeWeight(4);
+
+      point(this.target.x, this.target.y);
+
+      // Velocity
+      stroke('blue');
+      strokeWeight(1);
+
+      line(this.position.x, this.position.y, this.position.x + this.velocity.x, this.position.y + this.velocity.y);
+
+      // Avoidance
+      let avoidance = this.getAvoidiance();
+      let newPos = p5.Vector.add(this.position, avoidance);
+      stroke('cyan');
+      strokeWeight(1);
+
+      line(this.position.x, this.position.y, newPos.x, newPos.y);
+
+      // Samples
+      stroke('yellow');
+      strokeWeight(1);
+
+      beginShape();
+      this.trailBase.forEach(vert => vertex(vert.x, vert.y));
+      endShape();
+
+      stroke('lime');
+      strokeWeight(1);
+
+      beginShape();
+      this.trailSmoothed.forEach(vert => vertex(vert.x, vert.y));
+      endShape();
+    }
+
+    // Point
+    noFill();
+    stroke(this.getColorFromRest());
+    strokeWeight(8);
+
+    point(this.position.x, this.position.y);
+
+    stroke(this.baseColor);
+    strokeWeight(2);
+    strokeCap(ROUND);
+
+    beginShape();
+    this.trailSmoothed.forEach(vert => vertex(vert.x, vert.y));
+    endShape();
+  }
+
+  getAvoidiance() {
+    // Iterate over all avoiders and collect them
+    let avoidanceVectors = [];
+    for(let i=0; i < this.box.avoiders.length; i++) {
+      let avoiderPosition = createVector(this.box.avoiders[i].x, this.box.avoiders[i].y);
+      let avoiderDistance = p5.Vector.dist(avoiderPosition, this.position);
+
+      // Get the vector away from the avoider
+      let avoidanceVector = p5.Vector.sub(this.position, avoiderPosition).setMag(this.box.avoidRadii[i]);
+      // Scale the vector based on the distance
+      let vectorScale = min(max(1-(avoiderDistance/this.box.avoidRadii[i]), 0), 2);
+      avoidanceVector.mult(easeUtil.easeInOutCubic(vectorScale));
+
+      avoidanceVectors.push(avoidanceVector);
+    }
+
+    // Average the avoider vectors
+    let avoidanceVector = createVector(0,0);
+    avoidanceVectors.forEach(vector => avoidanceVector.add(vector));
+    avoidanceVector.div(avoidanceVectors.length);
+
+    return avoidanceVector.mult(2);
+  }
+
+  // Returns the color given the distance from the rest position
+  getColorFromRest() {
+    let distanceFromRest = p5.Vector.dist(this.position, this.target);
+    return lerpColor(this.baseColor, this.highlightColor, easeUtil.easeOutCubic(distanceFromRest/this.box.getMaxAvoidRadius()));
   }
 }
