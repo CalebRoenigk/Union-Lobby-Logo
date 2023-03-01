@@ -4063,7 +4063,7 @@ class SpringBox {
     this.palette = ["#abcd5e", "#29ac9f", "#14976b", "#b3dce0", "#62b6de", "#2b67af", "#ffd400", "#f589a3", "#f0502a", "#fc8405"];
 
     // Avoider
-    this.avoiders = [createVector(width/2, height/2), createVector(width/2, height/2)];
+    this.avoiders = [createVector(width/2, height/2), createVector(width/2, height/2), createVector(width/2, height/2)];
     this.avoidRadii = [75,75];
     this.time = 0;
     this.noiseFrequency = 0.25;
