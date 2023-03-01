@@ -3188,7 +3188,7 @@ class Fish {
   constructor(index,position, debug, bodyColor) {
     this.index = index;
     this.position = position;
-    this.resolution = Clamp(5, 3, 100);
+    this.resolution = mathUtil.clamp(5, 3, 100);
     this.length = 75;
 
     this.sightRadius = 75;
@@ -3259,7 +3259,7 @@ class Fish {
   // Returns a fin color from a given body color
   getFinColor(bodyColor)
   {
-    let newBrightness = round(Clamp(brightness(bodyColor) - 18, 0, 100));
+    let newBrightness = round(mathUtil.clamp(brightness(bodyColor) - 18, 0, 100));
 
     return color('hsb(' + round(hue(bodyColor)) + ', ' + round(saturation(bodyColor)) + '%, ' + newBrightness + '%)');
   }
@@ -3300,8 +3300,8 @@ class Fish {
       this.target = createVector(randomX, randomY);
 
       // Clamp the target to the bounds
-      this.target.x = Clamp(this.target.x, this.targetMargin, width - this.targetMargin);
-      this.target.y = Clamp(this.target.y, this.targetMargin, height - this.targetMargin);
+      this.target.x = mathUtil.clamp(this.target.x, this.targetMargin, width - this.targetMargin);
+      this.target.y = mathUtil.clamp(this.target.y, this.targetMargin, height - this.targetMargin);
     }
 
     // Update the facing rotation
@@ -3615,12 +3615,12 @@ class Fish {
       offset = createVector(0,0);
     }
 
-    let finInterval = Clamp(ceil((this.spineBodyPoints.length - 1) / this.finCount), 1, 100);
-    for(let i = 0; i < Clamp(this.finCount, 0, this.spineBodyPoints.length - 1); i++)
+    let finInterval = mathUtil.clamp(ceil((this.spineBodyPoints.length - 1) / this.finCount), 1, 100);
+    for(let i = 0; i < mathUtil.clamp(this.finCount, 0, this.spineBodyPoints.length - 1); i++)
     {
       // Get the fin anchors
       let finAnchors = i * finInterval;
-      finAnchors = Clamp(finAnchors + this.finAnchorOffset, 0, this.spineBodyPoints.length - 1);
+      finAnchors = mathUtil.clamp(finAnchors + this.finAnchorOffset, 0, this.spineBodyPoints.length - 1);
       let finDownScale = pow(this.finDownScale, i);
 
       // Left
@@ -3796,7 +3796,7 @@ class LillyPad {
     {
       angleMode(DEGREES);
       let offsetDisplacement = round(random(-this.creaseMaxDisplacement, this.creaseMaxDisplacement));
-      let creaseRotation = Clamp(((creaseRotationInterval * i) + offsetDisplacement) * (PI / 180), 0, 360 - (this.cutAngle * 2));
+      let creaseRotation = mathUtil.clamp(((creaseRotationInterval * i) + offsetDisplacement) * (PI / 180), 0, 360 - (this.cutAngle * 2));
       let creasePoint = p5.Vector.rotate(startCreasePoint, creaseRotation);
       this.creases.push(creasePoint);
     }
