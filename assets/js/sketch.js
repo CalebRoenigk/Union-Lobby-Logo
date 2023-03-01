@@ -4307,7 +4307,7 @@ class QuadTreeScene extends LobbyScene {
   }
 
   setup() {
-    this.quadTree = new QuadTreeNoiseRenderer();
+    this.quadTree = new QuadTreeNoiseRenderer(random(0,1000000));
     background(255);
     super.setup();
   }
