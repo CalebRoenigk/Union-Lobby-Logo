@@ -13,6 +13,7 @@ function preload() {
   sceneManager.scenes.push(new PepsiBubblerScene());
   sceneManager.scenes.push(new WordClockScene());
   sceneManager.scenes.push(new PepsiFullBleedScene());
+  sceneManager.scenes.push(new PolkaWaveScene());
   sceneManager.scenes.push(new PondScene());
   
   // Run the scene manager preload operation
@@ -3045,6 +3046,59 @@ class WaveRenderer {
   }
 }
 
+// Polka Wave Scene
+class PolkaWaveScene extends LobbyScene {
+  constructor() {
+    super('Polka Wave', new SceneOptions(false, [], 0));
+    this.wavyDots = new WavyDots();
+  }
+
+  setup() {
+    this.wavyDots = new WavyDots();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.wavyDots.draw();
+  }
+}
+
+class WavyDots {
+  constructor() {
+    this.resoultion = 16;
+    this.time = 0;
+  }
+
+  draw() {
+    this.time += deltaTime/1000;
+
+    let spacing = width/(this.resoultion-1);
+    let modulating = 1*Math.cos((this.time+2.124)*0.25)+1;
+    let vibrating = 2*Math.sin((this.time+0.34)*0.1);
+    let sinulating = 2*Math.cos(this.time*0.12)+4;
+
+    for(let x=0; x < this.resoultion; x++) {
+      for(let y=0; y < this.resoultion; y++) {
+        let r = 127.5 + 127.5 * Math.sin(y + x + this.time);
+        let g = 80 - 127.5 * Math.cos(y*0.75 + x  + this.time);
+        let b = (127.5 + 127.5 * Math.cos(y*0.15 + x  - this.time));
+
+        let position = createVector(x * spacing, y * spacing);
+        let ySize = ((Math.sin(this.time+y+0*0.25)+0)+1)/2;
+        let xSize = ((Math.sin(this.time+((x + vibrating*sinulating)*modulating)+y+0)+0)+1)/2;
+        let size = (ySize+xSize)/2;
+
+        noFill();
+        stroke('rgb('+ [abs(round(r)),abs(round(g)),abs(round(b))].join(', ') + ')');
+        strokeWeight(spacing*1.25*size);
+
+        point(position.x, position.y);
+      }
+    }
+  }
+}
+
 // Pond Scene
 class PondScene extends LobbyScene {
   constructor() {
@@ -3063,6 +3117,7 @@ class PondScene extends LobbyScene {
   }
 }
 
+// TODO: THIS ONE IS BROKEN SOMETHING ABOUT UPDATE
 class PondRenderer {
   constructor() {
     this.fish = [];
