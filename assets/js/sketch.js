@@ -15,7 +15,8 @@ function preload() {
   sceneManager.scenes.push(new PepsiFullBleedScene());
   sceneManager.scenes.push(new PolkaWaveScene());
   sceneManager.scenes.push(new PondScene());
-  sceneManager.scenes.push(new BoxOfSpringsScene())
+  sceneManager.scenes.push(new BoxOfSpringsScene());
+  sceneManager.scenes.push(new QuadTreeScene());
   
   // Run the scene manager preload operation
   // TODO: Add option to play video
@@ -4296,4 +4297,74 @@ class SpringParticle {
     let distanceFromRest = p5.Vector.dist(this.position, this.target);
     return lerpColor(this.baseColor, this.highlightColor, easeUtil.easeOutCubic(distanceFromRest/this.box.getMaxAvoidRadius()));
   }
+}
+
+// Quad Tree Scene
+class QuadTreeScene extends LobbyScene {
+  constructor() {
+    super('Noisy QuadTree', new SceneOptions(false, [], 0));
+    this.quadTree = new QuadTreeNoiseRenderer();
+  }
+
+  setup() {
+    this.quadTree = new QuadTreeNoiseRenderer();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.quadTree.draw();
+  }
+}
+
+class QuadTreeNoiseRenderer {
+  constructor(variation = 0, stackDepth = 9, speed = 0.5) {
+    this.palette = ["#abcd5e", "#29ac9f", "#14976b", "#b3dce0", "#62b6de", "#2b67af", "#ffd400", "#f589a3", "#f0502a", "#fc8405"];
+    this.variation = variation;
+    this.minRectSize = 0;
+    this.maxRectSize = 0;
+    this.position = createVector(random(-100000, 100000), random(-100000, 100000));
+    this.stackDepth = stackDepth;
+    this.speed = speed;
+
+    this.setup();
+  }
+
+  setup() {
+    this.maxRectSize = max(width, height);
+    this.minRectSize = max(this.maxRectSize / (2 ** this.stackDepth),4);
+    rectMode(CENTER);
+    stroke("black");
+    noFill();
+
+    // Randomly shift the array order
+    let randomShift = round(random(0, this.palette.length-1));
+
+    for(let i=0; i < randomShift; i++) {
+      let lastColor = this.palette.shift();
+      this.palette.push(lastColor);
+    }
+  }
+
+  draw() {
+    background(this.palette[this.palette.length-1]);
+    this.variation += 0.003 * this.speed;
+    this.quadTree(width / 2, height / 2, this.maxRectSize, 0);
+  }
+
+  quadTree(x, y, size, iteration) {
+    if (size < this.minRectSize) return;
+    const n = noise((x + this.position.x) * 0.001, (y + this.position.y) * 0.001, this.variation);
+    if (abs(n - 0.45) > size / this.maxRectSize) {
+      fill(color(this.palette[min(iteration, this.palette.length-1)]));
+      rect(x, y, size);
+    } else {
+      size /= 2;
+      const d = size / 2;
+      this.quadTree(x + d, y + d, size, iteration+1);
+      this.quadTree(x + d, y - d, size, iteration+1);
+      this.quadTree(x - d, y + d, size, iteration+1);
+      this.quadTree(x - d, y - d, size, iteration+1);
+    }
+  };
 }
