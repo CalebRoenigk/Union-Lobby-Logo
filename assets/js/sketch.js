@@ -3108,6 +3108,7 @@ class PondScene extends LobbyScene {
 
   setup() {
     this.pondRenderer = new PondRenderer();
+    this.pondRenderer.setup();
     background(255);
     super.setup();
   }
@@ -3132,7 +3133,6 @@ class PondRenderer {
   }
 
   setup() {
-    createCanvas(mgr.canvasSize.x, mgr.canvasSize.y);
     randomSeed(year() + month() + day() + hour() + minute() + second());
     let fishColors = [color('#607D8B'), color('#E79721'), color('#D34B0D'), color('#FCFBCC')];
     this.fish = [];
