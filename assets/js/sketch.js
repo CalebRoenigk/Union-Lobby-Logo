@@ -320,6 +320,7 @@ let clearSettingState = 0;
 // TODO: Add ability to force DEBUG on when editor is open (right now the debug is always on when editor is open
 // TODO: Fix site so that it can never be taller than the window, right now when the playlist is long enough the window gets longer
 
+// ------- CORE -------
 // Startup function
 function startup() {
   // Set up editor toggle
@@ -756,6 +757,8 @@ function mouseReleased() {
     sceneManager.maskEditor.drop();
   }
 }
+
+// ------- END CORE -------
 
 class SceneManager {
   constructor(scenes = [], duration= 60, size = 800) {
