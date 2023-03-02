@@ -800,7 +800,9 @@ class SceneManager {
   preload() {
     // Iterate over each scene and run its preload function
     for(let i=0; i < this.scenes.length; i++) {
-      console.log('preloading scene: ' + i + ' scene name: ' + this.scenes[i].name);
+      if(this.showDebug) {
+        console.log('preloading scene: ' + i + ' scene name: ' + this.scenes[i].name);
+      }
       this.scenes[i].preload();
     }
 
@@ -4420,6 +4422,7 @@ class QuadTreeNoiseRenderer {
   draw() {
     rectMode(CENTER);
     stroke("black");
+    strokeWeight(1);
     noFill();
     background(this.palette[this.palette.length-1]);
     this.variation += 0.003 * this.speed;
