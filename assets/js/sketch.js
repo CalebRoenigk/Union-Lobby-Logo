@@ -1928,46 +1928,63 @@ class WebdingScene extends LobbyScene {
     this.generateGrid();
   }
 
+  setup() {
+    this.webdings = [];
+    this.generateGrid();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    background(220);
+    // Draw all webdings in the grid
+    for(let x=0; x < this.webdings.length; x++) {
+      for(let y=0; y < this.webdings[x].length; y++) {
+        this.webdings[x][y].draw();
+      }
+    }
+  }
+
   generateGrid() {
-    let webdingSize = width/this.gridSize;
-    let webdingCount = createVector(this.gridSize, height/webdingSize);
+    let webdingSize = width / this.gridSize;
+    let webdingCount = createVector(this.gridSize, height / webdingSize);
 
     // Iterate over the grid
     let randomWebdingIndex = 0;
     let randomWebdingCount = 0;
-    for(let x=0; x < webdingCount.x; x++) {
+    for (let x = 0; x < webdingCount.x; x++) {
       let webdingRow = [];
-      for(let y=0; y < webdingCount.y; y++) {
-        if(randomWebdingCount <= 0) {
-          randomWebdingIndex = Math.round(random(0,6));
-          randomWebdingCount = Math.round(random(3,12)); // The number of webdings to do before choosing a new webding
+      for (let y = 0; y < webdingCount.y; y++) {
+        if (randomWebdingCount <= 0) {
+          randomWebdingIndex = Math.round(random(0, 6));
+          randomWebdingCount = Math.round(random(3, 12)); // The number of webdings to do before choosing a new webding
         }
 
         let webding;
-        let webdingPosition = createVector(x*webdingSize + (webdingSize/2), y*webdingSize + (webdingSize/2));
+        let webdingPosition = createVector(x * webdingSize + (webdingSize / 2), y * webdingSize + (webdingSize / 2));
 
-        switch(randomWebdingIndex) {
+        switch (randomWebdingIndex) {
           case 0:
           case 1:
             // 0,1: Moon Webding
-            webding = new MoonWebding(webdingPosition, webdingSize, random(0.1, 3), Math.round(random(1,3))/4, random(8,20), random(-1,1));
+            webding = new MoonWebding(webdingPosition, webdingSize, random(0.1, 3), Math.round(random(1, 3)) / 4, random(8, 20), random(-1, 1));
             break;
           case 2:
             // 2: Wave Webding
-            webding = new WaveWebding(webdingPosition, webdingSize, random(0.1, 3), random(2,9), random(-1,1));
+            webding = new WaveWebding(webdingPosition, webdingSize, random(0.1, 3), random(2, 9), random(-1, 1));
             break;
           case 3:
             // 3: Diagonal Webding
-            webding = new DiagonalWebding(webdingPosition, webdingSize, random(0.1, 3), random(2,9), random(-1,1));
+            webding = new DiagonalWebding(webdingPosition, webdingSize, random(0.1, 3), random(2, 9), random(-1, 1));
             break;
           case 4:
             // 4: Grid Webding
-            webding = new GridWebding(webdingPosition, webdingSize, random(0.1, 3), random(2,9), random(-1,1));
+            webding = new GridWebding(webdingPosition, webdingSize, random(0.1, 3), random(2, 9), random(-1, 1));
             break;
           case 5:
           case 6:
             // 5,6: Checkers Webding
-            webding = new CheckersWebding(webdingPosition, webdingSize, random(0.1, 3), random(2,6), Math.round(random(2,6)));
+            webding = new CheckersWebding(webdingPosition, webdingSize, random(0.1, 3), random(2, 6), Math.round(random(2, 6)));
             break;
           default:
             // Default: No Webding (Blank Webding)
@@ -1982,16 +1999,6 @@ class WebdingScene extends LobbyScene {
 
       this.webdings.push(webdingRow);
       randomWebdingCount--;
-    }
-  }
-
-  draw() {
-    background(220);
-    // Draw all webdings in the grid
-    for(let x=0; x < this.webdings.length; x++) {
-      for(let y=0; y < this.webdings[x].length; y++) {
-        this.webdings[x][y].draw();
-      }
     }
   }
 }
