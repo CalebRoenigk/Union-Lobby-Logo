@@ -21,6 +21,7 @@ function preload() {
   // Run the scene manager preload operation
   // TODO: Add option to play video
   // TODO: Test Webding scene
+  // TODO: TRANSITIONS ARE NOW BROKEN
 
   // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
   if(window.location.href === 'https://calebroenigk.github.io/Union-Lobby-Logo/') {
@@ -766,16 +767,16 @@ class SceneManager {
     this.forceNullGridDisplay = false;
     this.showDebug = {
       // data property
-      #state: true,
+      state: true,
 
       // accessor property(getter)
       get getDebug() {
-        return this.#state;
+        return this.state;
       },
 
-      //accessor property(setter)
+      // accessor property(setter)
       set changeDebug(state) {
-        this.#state = state;
+        this.state = state;
         this.updateDebug(state);
       }
     };
