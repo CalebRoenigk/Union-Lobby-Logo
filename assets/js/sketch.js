@@ -383,7 +383,9 @@ function updateEditorState() {
   }
 
   // Set the debug state
-  sceneManager.showDebug = editorState;
+  if(sceneManager !== null && sceneManager !== undefined) {
+    sceneManager.showDebug = editorState;
+  }
 }
 
 // Generates the playlist for all scenes in the p5js sketch
@@ -1061,7 +1063,7 @@ class SceneManager {
   // Updates all scenes debug states
   updateDebug() {
     // Iterate over all scenes and set their debug state
-    this.scenes.forEach(scene => scene.updateDebug(this.showDebug))
+    this.scenes.forEach(scene => scene.updateDebug(this.showDebug));
   }
 }
 
