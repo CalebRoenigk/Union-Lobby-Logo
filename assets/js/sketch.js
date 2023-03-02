@@ -956,6 +956,7 @@ class SceneManager {
 
     fill(transitionColor);
     noStroke();
+    rectMode(CORNER);
 
     rect(0,0, width, height);
   }
