@@ -315,7 +315,8 @@ let clearSettingState = 0;
 
 // TODO: Refactor to remove any remaining warnings in Rider
 // TODO: Check that options saving works
-// TODO: POTENTIALLY SCALE THE CANVAS UP TO 900px Square, or even 1000px, the machine can probs handle it
+// TODO: Add ability to force DEBUG on when editor is open (right now the debug is always on when editor is open
+// TODO: Fix site so that it can never be taller than the window, right now when the playlist is long enough the window gets longer
 
 // Startup function
 function startup() {
@@ -379,6 +380,9 @@ function updateEditorState() {
     }
     document.querySelector('body').classList.add('hide-cursor');
   }
+
+  // Set the debug state
+  sceneManager.showDebug = editorState;
 }
 
 // Generates the playlist for all scenes in the p5js sketch
@@ -760,6 +764,21 @@ class SceneManager {
     
     // Debug/Editor
     this.forceNullGridDisplay = false;
+    this.showDebug = {
+      // data property
+      #state: true,
+
+      // accessor property(getter)
+      get getDebug() {
+        return this.#state;
+      },
+
+      //accessor property(setter)
+      set changeDebug(state) {
+        this.#state = state;
+        this.updateDebug(state);
+      }
+    };
 
     // Null Scene
     this.nullScene = new NullScene();
@@ -844,12 +863,18 @@ class SceneManager {
 
   // Plays the next enabled scene
   playNext() {
-    console.log('play next!'); // TODO: REMOVE THIS PRINT WHEN SCENE MANAGER IS CONSIDERED FINISHED
-    console.log(this.scenes, this.scenes.filter(scene => scene.enabled));
+    if(this.showDebug) {
+      console.log('play next!');
+      console.log(this.scenes, this.scenes.filter(scene => scene.enabled));
+    }
+    
     // Set the current active scene to startup not executed
     if(this.activeScene !== null && this.activeScene !== undefined) {
       this.activeScene.startupExectued = false;
     }
+
+    // Force an update of the debug of all scenes, this is just in case and should under normal conditions not actually change anything
+    this.updateDebug();
     
     // Get an array of enabled playlist scenes
     let activeScenes = this.getActiveScenes();
@@ -1031,6 +1056,12 @@ class SceneManager {
   forceNullGrid(state) {
     this.forceNullGridDisplay = state;
   }
+  
+  // Updates all scenes debug states
+  updateDebug() {
+    // Iterate over all scenes and set their debug state
+    this.scenes.forEach(scene => scene.updateDebug(this.showDebug))
+  }
 }
 
 class LobbyScene {
@@ -1041,6 +1072,7 @@ class LobbyScene {
 
     // Runtime
     this.startupExectued = false;
+    this.debug = false;
   }
 
   // Acts like the standard sketch preload function
@@ -1056,6 +1088,11 @@ class LobbyScene {
   // Acts like the standard sketch draw function
   draw() {
 
+  }
+
+  // Updates the debug state of the scene
+  updateDebug(state) {
+    this.debug = state;
   }
 }
 
@@ -2668,6 +2705,13 @@ class WordClockScene extends LobbyScene {
     background(0);
     this.wordClock.draw();
   }
+
+  // Updates the debug state of the scene
+  updateDebug(state) {
+    super.updateDebug(state);
+    // Toggle the debug on the clock renderer
+    this.wordClock.renderDebug = state;
+  }
 }
 
 class WordClock {
@@ -3133,6 +3177,17 @@ class PondScene extends LobbyScene {
 
   draw() {
     this.pondRenderer.draw();
+  }
+
+  // Updates the debug state of the scene
+  updateDebug(state) {
+    super.updateDebug(state);
+    // Toggle the debug on the pond renderer
+    this.pondRenderer.debug = state;
+    // TODO: Remove this code if referncing works like it is suppose to
+    // // Iterate over all fish and lilly pads in the pond and update their debug states
+    // this.pondRenderer.fish.forEach(fish => fish.debug = state);
+    // this.pondRenderer.lillyPads.forEach(lillyPad => lillyPad.debug = state);
   }
 }
 
@@ -4057,6 +4112,15 @@ class BoxOfSpringsScene extends LobbyScene {
 
   draw() {
     this.springBox.draw();
+  }
+
+  // Updates the debug state of the scene
+  updateDebug(state) {
+    super.updateDebug(state);
+    // Toggle the debug on the spring box renderer
+    this.springBox.debug = state;
+    // Iterate over all springs in the spring box and toggle their debug as well
+    this.springBox.springs.forEach(spring => spring.debug = state);
   }
 }
 
