@@ -17,6 +17,7 @@ function preload() {
   sceneManager.scenes.push(new PondScene());
   sceneManager.scenes.push(new BoxOfSpringsScene());
   sceneManager.scenes.push(new QuadTreeScene());
+  sceneManager.scenes.push(new TravelersScene());
   
   // Run the scene manager preload operation
   // TODO: Add option to play video
@@ -4445,4 +4446,231 @@ class QuadTreeNoiseRenderer {
       this.quadTree(x - d, y - d, size, iteration+1);
     }
   };
+}
+
+// Travelers Scene
+class TravelersScene extends LobbyScene {
+  constructor() {
+    super('Travelers', new SceneOptions(false, [], 0));
+    this.dotGrid = new DotGrid();
+  }
+
+  setup() {
+    this.dotGrid = new DotGrid();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.dotGrid.draw();
+  }
+}
+
+class DotGrid {
+  constructor() {
+    this.count = 12;
+    this.travelerCount = 32;
+    this.nodes = [];
+    this.travelers = [];
+
+    this.palettes = [['#3E54AC','#ECF2FF','#655DBB','#BFACE2'], ['#155263','#FF6F3C','#FF9A3C','#FFC93C'], ['#00B8A9','#F8F3D4','#F6416C','#FFDE7D'], ['#F6F7D7','#3EC1D3','#FF9A00','#FF165D'], ['#00ADB5','#303841','#EEEEEE','#FF5722']];
+    this.selectedPalette = this.palettes[round(random(0, this.palettes.length-1))];
+
+    this.generateGrid();
+    this.generateTravelers();
+  }
+
+  draw() {
+    background(color(this.selectedPalette[0]));
+    this.nodes.forEach(nodeColumn => nodeColumn.forEach(node => node.drawPing()));
+    this.travelers.forEach(traveler => traveler.draw());
+    this.nodes.forEach(nodeColumn => nodeColumn.forEach(node => node.drawNode()));
+
+  }
+
+  // Generates the grid
+  generateGrid() {
+    let spacing = createVector(width/(this.count-1), height/(this.count-1));
+    for(let x=0; x < this.count; x++) {
+      let column = [];
+      for(let y=0; y < this.count; y++) {
+        column.push(new DotNode(createVector(spacing.x * x, spacing.y * y), color(this.selectedPalette[round(random(1,this.selectedPalette.length-1))])));
+      }
+
+      this.nodes.push(column);
+    }
+  }
+
+  // Generates Travelers
+  generateTravelers() {
+    for(let i=0; i < this.travelerCount; i++) {
+      let gridPosition = createVector(round(random(0,this.count-1)), round(random(0,this.count-1)));
+      this.travelers.push(new DotTraveler(this, gridPosition, color(this.selectedPalette[round(random(1,this.selectedPalette.length-1))])));
+    }
+  }
+
+  // Returns a grid position that is directly valid from the input position
+  getTravelPosition(gridPosition) {
+    // A travel position can be any node excluding the current node, that is 1 unit away from the current node
+    let currentX = gridPosition.x;
+    let currentY = gridPosition.y;
+    let randomRollX = random(0,1) > 0.5;
+    let randomRollY = random(0,1) > 0.5;
+
+    let travelX = mathUtil.clamp(currentX + (randomRollX?1:-1), 0, this.count-1);
+    let travelY = mathUtil.clamp(currentY + (randomRollY?1:-1), 0, this.count-1);
+
+    return createVector(travelX, travelY);
+  }
+
+  // Returns the canvas position of a node from its grid position
+  getCanvasPosition(gridPosition) {
+    return this.nodes[gridPosition.x][gridPosition.y].position;
+  }
+
+  // Apply a ping to a node
+  pingNode(gridPosition) {
+    this.nodes[gridPosition.x][gridPosition.y].ping();
+  }
+}
+
+class DotTraveler {
+  constructor(grid, position, color) {
+    this.grid = grid;
+    this.position = position;
+    this.color = color;
+    this.restDuration = random(0.5,3);
+    this.restTimer = 0;
+    this.travelDuration = 1.5;
+    this.travelTimer = 0;
+    this.traveling = false;
+    this.resting = true;
+    this.hasFiredPing = false;
+    this.firePing = 0.5;
+    this.travelStart = this.grid.getCanvasPosition(position);
+    this.travelEnd = this.grid.getCanvasPosition(position);
+    this.travelDistance = 0;
+  }
+
+  update() {
+    let frameDelta = deltaTime/1000;
+    if(this.resting) {
+      this.restTimer += frameDelta;
+
+      if(this.restTimer >= this.restDuration) {
+        this.resting = false;
+        this.restTimer = 0;
+        // Request a movement location from the grid    
+        this.travelTo(this.grid.getTravelPosition(this.position));
+      }
+    }
+
+    if(this.traveling) {
+      this.travelTimer += frameDelta;
+
+      if(this.travelTimer >= this.travelDuration) {
+        this.traveling = false;
+        this.travelTimer = 0;
+        this.resting = true;
+        this.restTimer = 0;
+        this.hasFiredPing = false;
+      }
+
+      if(this.travelTimer/this.travelDuration >= this.firePing && !this.hasFiredPing) {
+        this.hasFiredPing = true;
+        this.grid.pingNode(this.position);
+      }
+    }
+  }
+
+  draw() {
+    this.update();
+
+    if(this.traveling) {
+      // Draw the travel line
+      let travelLerp = easeUtil.easeInOutCubic(1 - (this.travelTimer/this.travelDuration));
+
+      stroke(this.color);
+      strokeWeight(4);
+      drawingContext.setLineDash([this.travelDistance, this.travelDistance]);
+      drawingContext.lineDashOffset = (travelLerp * (this.travelDistance*2))-this.travelDistance;
+
+      line(this.travelStart.x, this.travelStart.y, this.travelEnd.x, this.travelEnd.y);
+    } else {
+      // Additional resting animation
+    }
+  }
+
+  // Sets the travel direction
+  travelTo(gridPosition) {
+    this.traveling = true;
+    this.travelTimer = 0;
+    this.travelStart = this.grid.getCanvasPosition(this.position);
+    this.travelEnd = this.grid.getCanvasPosition(gridPosition);
+    // Store the length of the travel
+    this.travelDistance = p5.Vector.dist(this.travelStart, this.travelEnd);
+    // Store the end location as the new position
+    this.position = gridPosition;
+  }
+}
+
+class DotNode {
+  constructor(position, color) {
+    this.position = position;
+    this.color = color;
+
+    // Pinging
+    this.pinging = false;
+    this.pingTimer = 0;
+    this.pingDuration = 1;
+  }
+
+  drawPing() {
+    if(this.pinging) {
+      this.pingTimer += deltaTime/1000;
+
+      if(this.pingTimer >= this.pingDuration) {
+        this.pinging = false;
+        this.pingTimer = 0;
+      }
+
+      // Draw Ping
+      let pingLerp = this.pingTimer / this.pingDuration;
+      let pingWeight = easeUtil.easeOutCubic(1 - pingLerp) * 3;
+      let pingSize = easeUtil.easeOutCubic(pingLerp) * 64;
+
+      stroke(this.color);
+      strokeWeight(pingWeight);
+      drawingContext.setLineDash([0,0]);
+      noFill();
+
+      circle(this.position.x, this.position.y, pingSize);
+    }
+  }
+
+  drawNode() {
+    let nodeSize = 8;
+    let expandSize = 4;
+    if(this.pinging) {
+      let pingLerp = (this.pingTimer / this.pingDuration)*2;
+      if(pingLerp >= 1) {
+        nodeSize = (easeUtil.easeInCubic(1-(pingLerp-1)) * expandSize) + nodeSize;
+      } else {
+        nodeSize = (easeUtil.easeOutQuart(pingLerp) * expandSize) + nodeSize;
+      }
+    }
+
+    // Draw Node
+    stroke(this.color);
+    strokeWeight(nodeSize);
+    drawingContext.setLineDash([0,0]);
+
+    point(this.position.x, this.position.y);
+  }
+
+  // Pings the node
+  ping() {
+    this.pinging = true;
+    this.pingTimer = 0;
+  }
 }
