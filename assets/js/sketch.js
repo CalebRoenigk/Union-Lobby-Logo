@@ -4333,9 +4333,6 @@ class QuadTreeNoiseRenderer {
   setup() {
     this.maxRectSize = max(width, height);
     this.minRectSize = max(this.maxRectSize / (2 ** this.stackDepth),4);
-    rectMode(CENTER);
-    stroke("black");
-    noFill();
 
     // Randomly shift the array order
     let randomShift = round(random(0, this.palette.length-1));
@@ -4347,6 +4344,9 @@ class QuadTreeNoiseRenderer {
   }
 
   draw() {
+    rectMode(CENTER);
+    stroke("black");
+    noFill();
     background(this.palette[this.palette.length-1]);
     this.variation += 0.003 * this.speed;
     this.quadTree(width / 2, height / 2, this.maxRectSize, 0);
