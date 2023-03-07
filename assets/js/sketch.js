@@ -18,11 +18,11 @@ function preload() {
   sceneManager.scenes.push(new BoxOfSpringsScene());
   sceneManager.scenes.push(new QuadTreeScene());
   sceneManager.scenes.push(new TravelersScene());
+  sceneManager.scenes.push(new SparksScene());
   
   // Run the scene manager preload operation
   // TODO: Add option to play video
-  // TODO: Test Webding scene
-  // TODO: TRANSITIONS ARE NOW BROKEN
+  // TODO: TRANSITIONS ARE NOW BROKEN, as in they seem to not be timed correctly?
 
   // TODO: Remove this cheeky ass solution to preventing CORS from erroring out the JS when testing in local
   if(window.location.href === 'https://calebroenigk.github.io/Union-Lobby-Logo/') {
@@ -319,6 +319,7 @@ let clearSettingState = 0;
 // TODO: Check that options saving works
 // TODO: Add ability to force DEBUG on when editor is open (right now the debug is always on when editor is open
 // TODO: Fix site so that it can never be taller than the window, right now when the playlist is long enough the window gets longer
+// TODO: Make a weather sketch, displays a graphic based on the weather
 
 // ------- CORE -------
 // Startup function
@@ -1965,7 +1966,6 @@ class SquareFunfetti extends Funfetti {
 }
 
 // Webding Scene
-// TODO: Currently completely broken
 class WebdingScene extends LobbyScene {
   constructor() {
     super('Webdings');
@@ -4675,5 +4675,139 @@ class DotNode {
   ping() {
     this.pinging = true;
     this.pingTimer = 0;
+  }
+}
+
+// Sparks Scene
+class SparksScene extends LobbyScene {
+  constructor() {
+    super('Sparks', new SceneOptions(false, [], 0));
+    this.sparks = new Sparks();
+  }
+
+  setup() {
+    this.sparks = new Sparks();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.sparks.draw();
+  }
+}
+
+class Sparks {
+  constructor() {
+    this.count = 32;
+    this.sparks = [];
+    this.palettes = [['#3e4db4', '#91144e', '#ea1f25', '#ad6d37', '#f1ca00', '#ecddbe'], ['#1f246a', '#8a1181', '#d14444', '#2ca53e', '#68cbcb', '#e3c72d'], ['#eeda28', '#910c5c', '#7c34ad', '#537cda', '#27d5b2', '#54f044'], ['#2188cf', '#ffffff', '#4891aa', '#b6b6aa', '#80350e', '#ff9f46']]
+    this.palette = this.palettes[round(random(0, this.palettes.length-1))];
+    this.spawnInterval = 0.25;
+    this.spawnTimer = 0;
+    this.velocityRange = createVector(40,120);
+    this.duration = createVector(8,16);
+  }
+
+  draw() {
+    let i=0;
+    this.sparks.forEach(spark => {
+      spark.draw();
+
+      if(spark.erase) {
+        this.sparks[i] = null;
+      }
+      i++;
+    });
+
+    for(let i=this.sparks.length-1; i > -1; i--) {
+      if(this.sparks[i] === null) {
+        this.sparks.splice(i, 1);
+      }
+    }
+
+    if(this.sparks.length < this.count) {
+      this.spawnTimer -= deltaTime/1000;
+
+      if(this.spawnTimer <= 0) {
+        this.spawnTimer = this.spawnInterval;
+        this.sparks.push(new SparkLine(createVector(random(100,width-100), random(100,height-100)), createVector((round(random(0,1)) > 0.5 ? -1 : 1 ) * random(this.velocityRange.x,this.velocityRange.y)*2, (round(random(0,1)) > 0.5 ? -1 : 1 )* random(this.velocityRange.x,this.velocityRange.y)*2), color(this.palette[round(random(0,this.palette.length-1))]), random(this.duration.x, this.duration.y)));
+      }
+    }
+  }
+}
+
+class SparkLine {
+  constructor(position, velocity, color, duration) {
+    this.position = position;
+    this.velocity = velocity;
+    this.color = color;
+    this.points = [position];
+    this.simulated = false;
+    this.erase = false;
+    this.length = 0;
+    this.startLength = this.velocity.mag();
+    this.displayTime = duration;
+    this.displayTimer = duration;
+    this.weight = round(random(1,8));
+  }
+
+  draw() {
+    this.simulate();
+
+    if(this.simulated && !this.erase) {
+      this.displayTimer -= deltaTime/1000;
+
+      let currentLength = this.startLength * easeUtil.easeOutQuint((this.displayTimer/this.displayTime));
+
+      noFill();
+      stroke(this.color);
+      strokeWeight(this.weight);
+      drawingContext.setLineDash([0, this.length, currentLength, this.length - currentLength]);
+      drawingContext.lineDashOffset = this.length * (this.displayTimer/this.displayTime)+currentLength;
+
+      beginShape();
+      this.points.forEach(p => vertex(p.x, p.y));
+      endShape();
+
+      if(this.displayTimer <= 0 || currentLength < 2) {
+        this.erase = true;
+      }
+    }
+  }
+
+  simulate() {
+    if(!this.simulated) {
+      let newPos = p5.Vector.add(this.position, this.velocity);
+
+      if(newPos.x <= 0 || newPos.x >= width) {
+        this.velocity.x *= -1;
+        this.points.push(newPos);
+      }
+
+      if(newPos.y <= 0 || newPos.y >= height) {
+        this.velocity.y *= -1;
+        this.points.push(newPos);
+      }
+
+      this.velocity.lerp(createVector(0,0), 0.03);
+      this.position = newPos;
+
+      if(this.velocity.mag() < 1) {
+        this.simulated = true;
+        this.getLength();
+      }
+    }
+  }
+
+  getLength() {
+    let lastPoint = this.points[0];
+    let l = 0;
+    this.points.forEach(p => l+= lastPoint.dist(p));
+
+    this.length = l;
+
+    if(this.length > 8000) {
+      this.erase = true;
+    }
   }
 }
