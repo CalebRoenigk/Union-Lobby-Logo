@@ -4848,7 +4848,10 @@ class RoadIntersection {
     this.crosswalkSections = round(random(3,5))*this.laneCount;
     this.crosswalkChance = 0.3;
     this.paths = [];
-    this.carColors = ['#ab5675', '#ee6a7c', '#ffa7a5', '#ffe07e', '#72dcbb', '#34acba'];
+    this.palettes = [['#ffe7d6', '#73464c', ['#ab5675', '#ee6a7c', '#ffa7a5', '#ffe07e', '#72dcbb', '#34acba']], ['#fff1a9', '#120e23', ['#472859', '#225875', '#c53062', '#ffe07e', '#249e4f', '#f28941', '#b4dc3a']], ['#fbf8f0', '#0b0b0d', ['#514e37', '#aa8107', '#ffe00b', '#a6a6a6', '#5861ea', '#1b32d5']], ['#000511', '#c5ff8c', ['#051233', '#122a5e', '#15526b', '#227a7a', '#38ba8b', '#55ff79']]];
+    this.brightColor = 0;
+    this.darkColor = 0;
+    this.carColors = 0;
     this.carSpawnTime = 2;
     this.carSpawnTimer = 0;
     this.carMaxCount = 5;
@@ -4856,8 +4859,16 @@ class RoadIntersection {
     this.carSize = createVector(14,16,12);
     this.carVariance = createVector(2,5,2);
     this.debug = false;
-
+    
+    this.getPalette();
     this.generateRoad();
+  }
+
+  getPalette() {
+    let palette = this.palettes.[round(random(0,this.palettes.length-1))];
+    this.brightColor = color(palette[0]);
+    this.darkColor = color(palette[1]);
+    this.carColors = palette[2];
   }
 
   generateRoad() {
@@ -4968,7 +4979,7 @@ class RoadIntersection {
   }
 
   draw() {
-    background(color('#ffe7d6'));
+    background(this.brightColor);
     this.update();
     
     // Roads
@@ -4993,7 +5004,7 @@ class RoadIntersection {
     let crosswalkSectionWidth = max((this.crosswalkLength - ((this.crosswalkSections-1) * this.crosswalkGap))/this.crosswalkSections, this.laneWidth/6);
     let crosswalkDashSet = [crosswalkSectionWidth, this.crosswalkGap];
     this.crosswalks.forEach(crosswalk => {
-      stroke(color('#ffe7d6'));
+      stroke(this.brightColor);
       strokeCap(SQUARE);
       strokeWeight(this.crosswalkWidth);
       drawingContext.setLineDash(crosswalkDashSet);
@@ -5019,7 +5030,7 @@ class RoadIntersection {
   }
 
   drawCenterCover() {
-    stroke(color('#73464c'));
+    stroke(this.darkColor);
     strokeCap(PROJECT);
     strokeWeight(this.laneCount * this.laneWidth);
     drawingContext.setLineDash([0, 0]);
@@ -5298,7 +5309,7 @@ class Road {
   // Lanes
 
   drawEdge() {
-    stroke(color('#73464c'));
+    stroke(this.intersection.darkColor);
     strokeCap(SQUARE);
     strokeWeight(this.width);
     drawingContext.setLineDash([0, 0]);
@@ -5308,7 +5319,7 @@ class Road {
   }
 
   drawSidewalk() {
-    stroke(color('#ffe7d6'));
+    stroke(this.intersection.brightColor);
     strokeCap(SQUARE);
     strokeWeight(this.width-(this.edgeWidth*2));
     drawingContext.setLineDash([0, 0]);
@@ -5318,7 +5329,7 @@ class Road {
   }
 
   drawSurface() {
-    stroke(color('#73464c'));
+    stroke(this.intersection.darkColor);
     strokeCap(SQUARE);
     strokeWeight(this.width-((this.edgeWidth*2) + (this.sidewalkWidth*2)));
     drawingContext.setLineDash([0, 0]);
@@ -5328,7 +5339,7 @@ class Road {
   }
 
   drawLanes() {
-    stroke(color('#ffe7d6'));
+    stroke(this.intersection.brightColor);
     strokeCap(SQUARE);
     strokeWeight(2);
     drawingContext.setLineDash([12, 8]);
