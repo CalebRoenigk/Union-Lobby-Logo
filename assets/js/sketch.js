@@ -4865,7 +4865,7 @@ class RoadIntersection {
   }
 
   getPalette() {
-    let palette = this.palettes.[round(random(0,this.palettes.length-1))];
+    let palette = this.palettes[round(random(0,this.palettes.length-1))];
     this.brightColor = color(palette[0]);
     this.darkColor = color(palette[1]);
     this.carColors = palette[2];
