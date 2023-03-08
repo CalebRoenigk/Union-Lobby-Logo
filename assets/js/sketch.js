@@ -19,6 +19,7 @@ function preload() {
   sceneManager.scenes.push(new QuadTreeScene());
   sceneManager.scenes.push(new TravelersScene());
   sceneManager.scenes.push(new SparksScene());
+  sceneManager.scenes.push(new IntersectionScene());
   
   // Run the scene manager preload operation
   // TODO: Add option to play video
@@ -4809,5 +4810,543 @@ class SparkLine {
     if(this.length > 8000) {
       this.erase = true;
     }
+  }
+}
+
+// Intersection
+class IntersectionScene extends LobbyScene {
+  constructor() {
+    super('Intersection', new SceneOptions(false, [], 0));
+    this.intersection = new RoadIntersection();
+  }
+
+  setup() {
+    this.intersection = new RoadIntersection();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    this.intersection.draw();
+  }
+}
+
+class RoadIntersection {
+  constructor() {
+    this.centerRange = width/3;
+    this.position = createVector(width/2, height/2).add(createVector(random(-this.centerRange/2, this.centerRange/2), random(-this.centerRange/2, this.centerRange/2)));
+    this.roadSlopeVariance = 15;
+    this.laneCount = round(random(1,5));
+    this.laneWidth = round(random(32, 64));
+    this.roadOvershoot = 100;
+    this.roads = [];
+    this.centerCovers = [];
+    this.crosswalks =[];
+    this.crosswalkWidth = round(this.laneWidth*0.75);
+    this.crosswalkLength = 0;
+    this.crosswalkGap = max(round(this.laneWidth/6), 1);
+    this.crosswalkSections = round(random(3,5))*this.laneCount;
+    this.crosswalkChance = 0.3;
+    this.paths = [];
+    this.carColors = ['#ab5675', '#ee6a7c', '#ffa7a5', '#ffe07e', '#72dcbb', '#34acba'];
+    this.carSpawnTime = 2;
+    this.carSpawnTimer = 0;
+    this.carMaxCount = 5;
+    this.carCount = 0;
+    this.carSize = createVector(14,16,12);
+    this.carVariance = createVector(2,5,2);
+    this.debug = false;
+
+    this.generateRoad();
+  }
+
+  generateRoad() {
+    // First generate a random vector that skews heavily right
+    let horizontalVector = createVector(50, random(-this.roadSlopeVariance,this.roadSlopeVariance));
+    let horizontalSlope = ((horizontalVector.y+this.position.y) - this.position.y)/((horizontalVector.x+this.position.x) - this.position.x);
+    let horizontalYIntercept = this.position.y - horizontalSlope * this.position.x; // this.position.y = horizontalSlope * this.position.x + b
+    // Create start and end points based on this vector
+    let horizontalRoadStart = createVector(-this.roadOvershoot, (horizontalSlope * -this.roadOvershoot) + horizontalYIntercept); // y=mx+b
+    let horizontalRoadEnd = createVector(width+this.roadOvershoot, (horizontalSlope * (width+this.roadOvershoot)) + horizontalYIntercept); // y=mx+b
+    let horizontalAddition = abs((width/2) - this.position.x);
+    horizontalRoadStart = horizontalRoadStart.sub(this.position).setMag((width/2) + this.roadOvershoot+horizontalAddition).add(this.position);
+    horizontalRoadEnd = horizontalRoadEnd.sub(this.position).setMag((width/2) + this.roadOvershoot+horizontalAddition).add(this.position);
+    // Generate the new road
+    this.roads.push(new Road(this, horizontalRoadStart, horizontalRoadEnd, this.laneCount, this.laneWidth));
+
+    // Next generate a random vector that skews heavily down
+    let verticalVector = createVector(random(-this.roadSlopeVariance,this.roadSlopeVariance), 50);
+    let verticalSlope = ((verticalVector.y+this.position.y) - this.position.y)/((verticalVector.x+this.position.x) - this.position.x);
+    let verticalYIntercept = this.position.y - verticalSlope * this.position.x; // this.position.y = verticalSlope * this.position.x + b
+    // Create start and end points based on this vector
+    let verticalRoadStart = createVector(-this.roadOvershoot, (verticalSlope * -this.roadOvershoot) + verticalYIntercept); // y=mx+b
+    let verticalRoadEnd = createVector(width+this.roadOvershoot, (verticalSlope * (width+this.roadOvershoot)) + verticalYIntercept); // y=mx+b
+    let verticalAddition = abs((height/2) - this.position.y);
+    verticalRoadStart = verticalRoadStart.sub(this.position).setMag((height/2) + this.roadOvershoot+verticalAddition).add(this.position);
+    verticalRoadEnd = verticalRoadEnd.sub(this.position).setMag((height/2) + this.roadOvershoot+verticalAddition).add(this.position);
+
+    // Generate the new road
+    this.roads.push(new Road(this, verticalRoadStart, verticalRoadEnd, this.laneCount, this.laneWidth));
+
+    // Generate the center cover
+    // Use the horizontal vector from the center point to get the edges of the center
+    let centerWidth = (this.laneCount * this.laneWidth)+this.crosswalkWidth;
+    let horizontalCenterStart = p5.Vector.add(this.position, p5.Vector.mult(horizontalVector, -1).setMag(centerWidth/2));
+    let horizontalCenterEnd = p5.Vector.add(this.position, p5.Vector.setMag(horizontalVector, centerWidth/2));
+    this.centerCovers.push([horizontalCenterStart, horizontalCenterEnd]);
+
+    // Use the vertical vector from the center point to get the edges of the center
+    let verticalCenterStart = p5.Vector.add(this.position, p5.Vector.mult(verticalVector, -1).setMag(centerWidth/2));
+    let verticalCenterEnd = p5.Vector.add(this.position, p5.Vector.setMag(verticalVector, centerWidth/2));
+    this.centerCovers.push([verticalCenterStart, verticalCenterEnd]);
+
+    // Generate the crosswalks
+    this.crosswalkLength = centerWidth - this.crosswalkWidth;
+    let crosswalkCenters = [verticalCenterStart, verticalCenterEnd, horizontalCenterStart, horizontalCenterEnd];
+    let crosswalkVectors = [horizontalVector, horizontalVector, verticalVector, verticalVector];
+    for(let i=0; i < 4; i++) {
+      if(1 - random(0,1) > this.crosswalkChance) {
+        this.generateCrosswalk(crosswalkCenters[i], p5.Vector.setMag(crosswalkVectors[i], this.crosswalkLength/2));
+      }
+    }
+
+    // Generate the car paths
+    // Starting with only straight paths
+    // TODO: Add turning paths
+    // Create the horizontal paths
+    let horizontalTopDirection = createVector(-horizontalVector.y, horizontalVector.x).setMag((this.laneCount * this.laneWidth)/2);
+    let horizontalTopStart = p5.Vector.add(horizontalRoadStart, horizontalTopDirection).add(p5.Vector.mult(horizontalTopDirection, -1).setMag(this.laneWidth/2));
+    let horizontalTopEnd = p5.Vector.add(horizontalRoadEnd, horizontalTopDirection).add(p5.Vector.mult(horizontalTopDirection, -1).setMag(this.laneWidth/2));
+    let horizontalPathOffset = p5.Vector.mult(horizontalTopDirection, -1).setMag(this.laneWidth);
+
+    for(let i=0; i < this.laneCount; i++) {
+      let pathStart = p5.Vector.add(horizontalTopStart, p5.Vector.mult(horizontalPathOffset, i));
+      let pathEnd = p5.Vector.add(horizontalTopEnd, p5.Vector.mult(horizontalPathOffset, i));
+      this.paths.push(new CarPath(this, i, [pathStart, pathEnd]));
+    }
+
+    // Create the vertical paths
+    let verticalTopDirection = createVector(-verticalVector.y, verticalVector.x).setMag((this.laneCount * this.laneWidth)/2);
+    let verticalTopStart = p5.Vector.add(verticalRoadStart, verticalTopDirection).add(p5.Vector.mult(verticalTopDirection, -1).setMag(this.laneWidth/2));
+    let verticalTopEnd = p5.Vector.add(verticalRoadEnd, verticalTopDirection).add(p5.Vector.mult(verticalTopDirection, -1).setMag(this.laneWidth/2));
+    let verticalPathOffset = p5.Vector.mult(verticalTopDirection, -1).setMag(this.laneWidth);
+
+    for(let i=0; i < this.laneCount; i++) {
+      let pathStart = p5.Vector.add(verticalTopStart, p5.Vector.mult(verticalPathOffset, i));
+      let pathEnd = p5.Vector.add(verticalTopEnd, p5.Vector.mult(verticalPathOffset, i));
+      this.paths.push(new CarPath(this, i+this.laneCount, [pathStart, pathEnd]));
+    }
+
+    // Set up all linkages between paths
+    // All horizontal paths intersect with all vertical and vice versa
+    for(let i=0; i < this.laneCount; i++) {
+      for(let j=0; j < this.laneCount; j++) {
+        this.paths[i].addIntersectingPath(this.paths[j+this.laneCount]);
+      }
+    }
+  }
+
+  update() {
+    this.carCount = 0;
+    this.paths.forEach(p => {
+      if(p.isActive) {
+        this.carCount++;
+      }
+    });
+
+    if(this.carCount < this.carMaxCount) {
+      // Can maybe spawn a car
+      this.carSpawnTimer -= deltaTime/1000;
+
+      if(this.carSpawnTimer <= 0) {
+        this.carSpawnTimer = this.carSpawnTime;
+        this.spawnCar();
+      }
+    }
+
+    this.paths.forEach(p => p.debug = this.debug);
+  }
+
+  draw() {
+    background(color('#ffe7d6'));
+    this.update();
+    
+    // Roads
+    this.roads.forEach(road => {
+      road.drawEdge();
+    });
+    this.roads.forEach(road => {
+      road.drawSidewalk();
+    });
+    this.roads.forEach(road => {
+      road.drawSurface();
+    });
+    this.roads.forEach(road => {
+      road.drawLanes();
+    });
+
+    // Center Cover
+    // TODO: Rework this code to be all shapes
+    this.drawCenterCover();
+
+    // TODO: Rework this code to be all shapes
+    let crosswalkSectionWidth = max((this.crosswalkLength - ((this.crosswalkSections-1) * this.crosswalkGap))/this.crosswalkSections, this.laneWidth/6);
+    let crosswalkDashSet = [crosswalkSectionWidth, this.crosswalkGap];
+    this.crosswalks.forEach(crosswalk => {
+      stroke(color('#ffe7d6'));
+      strokeCap(SQUARE);
+      strokeWeight(this.crosswalkWidth);
+      drawingContext.setLineDash(crosswalkDashSet);
+      drawingContext.lineDashOffset = 0;
+
+      line(crosswalk[0].x, crosswalk[0].y, crosswalk[1].x, crosswalk[1].y);
+    })
+
+    // Paths
+    this.paths.forEach(p => {
+      p.draw();
+    })
+
+    if(this.debug) {
+      stroke(color('red'));
+      strokeCap(SQUARE);
+      strokeWeight(8);
+      drawingContext.setLineDash([0, 0]);
+      drawingContext.lineDashOffset = 0;
+
+      point(this.position.x, this.position.y);
+    }
+  }
+
+  drawCenterCover() {
+    stroke(color('#73464c'));
+    strokeCap(PROJECT);
+    strokeWeight(this.laneCount * this.laneWidth);
+    drawingContext.setLineDash([0, 0]);
+    drawingContext.lineDashOffset = 0;
+
+    line(this.centerCovers[0][0].x, this.centerCovers[0][0].y, this.centerCovers[0][1].x, this.centerCovers[0][1].y);
+    line(this.centerCovers[1][0].x, this.centerCovers[1][0].y, this.centerCovers[1][1].x, this.centerCovers[1][1].y);
+  }
+
+  // Generates a crosswalk given input values
+  generateCrosswalk(crosswalkCenter, crosswalkDirection) {
+    // Get the start and end points of the crosswalk
+    let crosswalkStart = p5.Vector.add(crosswalkCenter, crosswalkDirection);
+    let crosswalkEnd = p5.Vector.add(crosswalkCenter, p5.Vector.mult(crosswalkDirection, -1));
+
+    this.crosswalks.push([crosswalkStart, crosswalkEnd]);
+  }
+
+  // Spawns a car on an avaible path if possible
+  spawnCar() {
+    let openPaths = [];
+    this.paths.forEach(p => {
+      if(!p.isActive) {
+        openPaths.push(p);
+      }
+    });
+
+    // Pick a random open path and spawn a car
+    if(openPaths.length > 0) {
+      openPaths[round(random(0, openPaths.length-1))].spawnCar();
+    }
+  }
+
+  // Returns a pairing of car colors
+  getCarColors() {
+    let carBase = color(this.carColors[round(random(0, this.carColors.length-1))]);
+    let baseValues = carBase.toString().substr(5,carBase.toString().length-6).split(',');
+    let darken = 48;
+    let carGlass = color('rgba(' + [max(baseValues[0]-darken,0), max(baseValues[1]-darken,0), max(baseValues[2]-darken,0)].join(',') + ', 1)');
+    return [carBase, carGlass];
+  }
+}
+
+class CarPath {
+  constructor(intersection, index, points) {
+    this.intersection = intersection;
+    this.index = index;
+    this.points = points;
+    this.activeDirection = 1;
+    this.percentageCompleted = 0;
+    this.carLerp = 0;
+    this.intersectingPaths = [];
+    this.isActive = false;
+    this.travelTime = random(4,8);
+    this.travelTimer = 0;
+    this.length = this.getLength();
+    this.stopPlacement = 0.5 - (this.intersection.crosswalkWidth / this.length)*4;
+    this.car = new Car(this, this.intersection.carSize);
+    this.debug = false;
+  }
+
+  // Refreshes the path options
+  refreshPath() {
+    this.activeDirection = (round(random(0,1))*2)-1;
+    this.percentageCompleted = 0;
+    this.travelTime = random(4,8);
+    this.travelTimer = 0;
+  }
+
+  draw() {
+    if(this.isActive) {
+      this.car.draw();
+    }
+
+    if(this.isActive) {
+      // Draw Car
+      this.travelTimer += deltaTime/1000;
+
+      if(this.travelTimer >= this.travelTime) {
+        this.travelTimer = 0;
+        this.isActive = false;
+        return;
+      } else {
+        let carTravelLerp = this.travelTimer/this.travelTime;
+        this.percentageCompleted = this.travelTimer/this.travelTime;
+        if(carTravelLerp <= this.stopPlacement) {
+          carTravelLerp = easeUtil.easeOutQuad(carTravelLerp*(1/this.stopPlacement))/(1/this.stopPlacement);
+        } else {
+          carTravelLerp = (easeUtil.easeInSine((carTravelLerp*(1/this.stopPlacement))-1)/(1/this.stopPlacement)) + this.stopPlacement;
+        }
+
+        if(this.activeDirection === -1) {
+          carTravelLerp = 1-carTravelLerp;
+        }
+
+        this.carLerp = max(min(carTravelLerp,1),0);
+      }
+    }
+
+    if(this.debug) {
+      switch(this.getActiveState()) {
+        default:
+        case 'off':
+          stroke(color('red'));
+          break;
+        case 'possible':
+          stroke(color('yellow'));
+          break;
+        case 'active':
+          stroke(color('lime'));
+          break;
+      }
+      strokeCap(SQUARE);
+      strokeWeight(1);
+      drawingContext.setLineDash([0, 0]);
+      drawingContext.lineDashOffset = 0;
+
+      beginShape();
+      this.points.forEach(p => vertex(p.x, p.y));
+      endShape();
+
+      let center = p5.Vector.lerp(this.points[0], this.points[1], 0.5);
+
+      stroke(color('blue'));
+      strokeCap(ROUND);
+      strokeWeight(8);
+      drawingContext.setLineDash([0, 0]);
+      drawingContext.lineDashOffset = 0;
+
+      point(center.x, center.y);
+
+      let car = p5.Vector.lerp(this.points[0], this.points[1], this.carLerp);
+
+      stroke(color('lime'));
+      strokeCap(ROUND);
+      strokeWeight(8);
+      drawingContext.setLineDash([0, 0]);
+      drawingContext.lineDashOffset = 0;
+
+      point(car.x, car.y);
+    }
+  }
+
+  getActiveState() {
+    if(this.isActive) {
+      return 'active';
+    }
+
+    if(!this.isActive && this.canActivate()) {
+      return 'possible';
+    } else {
+      return 'off';
+    }
+  }
+
+  canActivate() {
+    if(this.isActive) {
+      return false;
+    } else {
+      for(let i=0; i < this.intersectingPaths.length; i++) {
+        if(this.intersectingPaths[i].isActive && this.intersectingPaths[i].percentageCompleted < this.intersectingPaths[i].stopPlacement) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+  addIntersectingPath(path) {
+    if(!this.intersectingPaths.includes(path)) {
+      this.intersectingPaths.push(path);
+    }
+
+    if(!path.intersectingPaths.includes(this)) {
+      path.addIntersectingPath(this);
+    }
+  }
+
+  spawnCar() {
+    this.refreshPath();
+    this.isActive = true;
+    this.car = new Car(this, p5.Vector.add(this.intersection.carSize, createVector(random(-this.intersection.carVariance.x, this.intersection.carVariance.x), random(-this.intersection.carVariance.y, this.intersection.carVariance.y), random(-this.intersection.carVariance.z, this.intersection.carVariance.z))));
+  }
+
+  // Returns the length of the path
+  getLength() {
+    let length = 0;
+    let lastPoint = this.points[0];
+    this.points.forEach(p => {
+      length += p5.Vector.dist(lastPoint, p);
+    });
+
+    return length;
+  }
+}
+
+class Car {
+  constructor(carPath, carSize) {
+    this.carPath = carPath;
+    this.carSize = carSize;
+    this.glassColor = color('blue');
+    this.baseColor = color('red');
+
+    this.setColors();
+  }
+
+  draw() {
+    let carDash = [this.carSize.x, this.carPath.length - this.carSize.x];
+    let carStart = this.carPath.points[1];
+    let carEnd = this.carPath.points[0];
+    drawingContext.lineDashOffset = this.carPath.carLerp * this.carPath.length;
+
+    // SHADOW
+    blendMode(MULTIPLY);
+    stroke(color('rgba(52, 172, 186, .35)'));
+    strokeCap(ROUND);
+    strokeWeight(this.carSize.y);
+    drawingContext.setLineDash(carDash);
+
+    // line(0, height/2+10+(108/4), width, height/2+10+(108/4));
+    line(carStart.x, carStart.y+this.carSize.z, carEnd.x, carEnd.y+this.carSize.z);
+
+    // BOTTOM
+    blendMode(BLEND);
+    stroke(this.baseColor);
+    strokeCap(ROUND);
+    strokeWeight(this.carSize.y);
+    drawingContext.setLineDash(carDash);
+
+    // line(0, height/2+5+(108/4), width, height/2+5+(108/4));
+    line(carStart.x, carStart.y+(this.carSize.z*0.4), carEnd.x, carEnd.y+(this.carSize.z*0.4));
+
+    // SIDE
+    stroke(this.glassColor);
+    strokeCap(ROUND);
+    strokeWeight(this.carSize.y);
+    drawingContext.setLineDash(carDash);
+
+    // line(0, height/2+3+(108/4), width, height/2+3+(108/4));
+    line(carStart.x, carStart.y+(this.carSize.z*0.25), carEnd.x, carEnd.y+(this.carSize.z*0.25));
+
+    // TOP
+    stroke(this.baseColor);
+    strokeCap(ROUND);
+    strokeWeight(this.carSize.y*0.85);
+    drawingContext.setLineDash(carDash);
+
+    // line(0, height/2+(108/4), width, height/2+(108/4));
+    line(carStart.x, carStart.y, carEnd.x, carEnd.y);
+  }
+
+  setColors() {
+    let carColors = this.carPath.intersection.getCarColors();
+    this.baseColor = carColors[0];
+    this.glassColor = carColors[1];
+  }
+}
+
+class Road {
+  constructor(intersection, start, end, laneCount, laneWidth) {
+    this.intersection = intersection;
+    this.start = start;
+    this.end = end;
+    this.laneCount = laneCount;
+    this.edgeWidth = 1.5;
+    this.sidewalkWidth = laneWidth/4;
+    this.width = this.laneCount * laneWidth + ((this.sidewalkWidth + this.edgeWidth) * 2);
+    this.orientation = abs(this.end.x-this.start.x) > abs(this.end.y-this.start.y);
+
+  }
+
+  // Draw Order:
+  // Edge
+  // Sidewalk
+  // Surface
+  // Lanes
+
+  drawEdge() {
+    stroke(color('#73464c'));
+    strokeCap(SQUARE);
+    strokeWeight(this.width);
+    drawingContext.setLineDash([0, 0]);
+    drawingContext.lineDashOffset = 0;
+
+    this.draw();
+  }
+
+  drawSidewalk() {
+    stroke(color('#ffe7d6'));
+    strokeCap(SQUARE);
+    strokeWeight(this.width-(this.edgeWidth*2));
+    drawingContext.setLineDash([0, 0]);
+    drawingContext.lineDashOffset = 0;
+
+    this.draw();
+  }
+
+  drawSurface() {
+    stroke(color('#73464c'));
+    strokeCap(SQUARE);
+    strokeWeight(this.width-((this.edgeWidth*2) + (this.sidewalkWidth*2)));
+    drawingContext.setLineDash([0, 0]);
+    drawingContext.lineDashOffset = 0;
+
+    this.draw();
+  }
+
+  drawLanes() {
+    stroke(color('#ffe7d6'));
+    strokeCap(SQUARE);
+    strokeWeight(2);
+    drawingContext.setLineDash([12, 8]);
+    drawingContext.lineDashOffset = 0;
+
+    let surfaceWidth = this.width-((this.edgeWidth*2) + (this.sidewalkWidth*2));
+    let laneWidth = surfaceWidth / this.laneCount;
+    for(let i=0; i < this.laneCount-1; i++) {
+      this.draw(this.orientation ? createVector(0, -(surfaceWidth/2)+(laneWidth*(i+1))) : createVector(-(surfaceWidth/2)+(laneWidth*(i+1)), 0));
+    }
+  }
+
+  draw(offset = false) {
+    if(!offset) {
+      offset = createVector(0,0);
+    }
+    let start = p5.Vector.add(this.start, offset);
+    let end = p5.Vector.add(this.end, offset);
+    line(start.x, start.y, end.x, end.y);
   }
 }
