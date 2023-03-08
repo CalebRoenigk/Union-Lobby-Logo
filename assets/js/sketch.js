@@ -20,6 +20,7 @@ function preload() {
   sceneManager.scenes.push(new TravelersScene());
   sceneManager.scenes.push(new SparksScene());
   sceneManager.scenes.push(new IntersectionScene());
+  sceneManager.scenes.push(new VaseScene());
   
   // Run the scene manager preload operation
   // TODO: Add option to play video
@@ -5359,5 +5360,70 @@ class Road {
     let start = p5.Vector.add(this.start, offset);
     let end = p5.Vector.add(this.end, offset);
     line(start.x, start.y, end.x, end.y);
+  }
+}
+
+// Vase
+class VaseScene extends LobbyScene {
+  constructor() {
+    super('Vase', new SceneOptions(false, [], 0));
+    this.vaseShelf = new VaseShelf();
+  }
+
+  setup() {
+    this.intersecvaseShelftion = new VaseShelf();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    background(220);
+    this.vaseShelf.draw();
+  }
+}
+
+class VaseShelf {
+  constructor() {
+    this.count = 9;
+    this.vases = [];
+
+    this.generateVases();
+  }
+
+  generateVases() {
+    for(let i=0; i < this.count; i++) {
+      this.vases.push(new Vase(i*(width/(this.count-1))));
+    }
+  }
+
+  draw() {
+    this.vases.forEach(v => v.draw());
+  }
+}
+
+class Vase {
+  constructor(x) {
+    this.x = x;
+    this.count = 64;
+    this.Aa = random(48,128);
+    this.Ba = random(24,32);
+    this.Af = random(4,12)/1000;
+    this.Bf = random(8,16)/100;
+    this.Bs = random(8,16);
+    this.speed = random(0.03, 0.07);
+  }
+
+  draw() {
+    for(let i=this.count-1; i > -1; i--) {
+      fill(color('white'));
+      stroke(color('black'));
+      strokeWeight(1);
+
+      let t = Date.now()*this.speed;
+      let sampleA = this.Aa * sin((t+(width/(this.count-1) * i))*this.Af) + (this.Aa*1.25);
+      let sampleB = this.Ba * sin((t+(width/(this.count-1) * i*this.Bs))*this.Bf) + (this.Ba*0.1);
+
+      ellipse(this.x, i * width/(this.count-1), sampleA + sampleB, width/(this.count-1)*4);
+    }
   }
 }
