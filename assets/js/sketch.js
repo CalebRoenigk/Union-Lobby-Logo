@@ -975,6 +975,8 @@ class SceneManager {
     angleMode(RADIANS); // Angle Interpretation Mode
     drawingContext.fillStyle = null; // Drawing Context Fill
     drawingContext.strokeStyle = null; // Drawing Context Stroke
+    drawingContext.setLineDash([0,0]); // Drawing Context Stroke Dash Set
+    drawingContext.lineDashOffset = 0; // Drawing Context Stroke Line Offset
     ellipseMode(CENTER); // Ellipse Drawing Mode
   }
   
