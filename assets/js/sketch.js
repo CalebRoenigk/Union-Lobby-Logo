@@ -21,6 +21,7 @@ function preload() {
   sceneManager.scenes.push(new SparksScene());
   sceneManager.scenes.push(new IntersectionScene());
   sceneManager.scenes.push(new VaseScene());
+  sceneManager.scenes.push(new ConstellationsScene());
   
   // Run the scene manager preload operation
   // TODO: Add option to play video
@@ -978,6 +979,7 @@ class SceneManager {
     drawingContext.setLineDash([0,0]); // Drawing Context Stroke Dash Set
     drawingContext.lineDashOffset = 0; // Drawing Context Stroke Line Offset
     ellipseMode(CENTER); // Ellipse Drawing Mode
+    textAlign(LEFT); // Text Alignment
   }
   
   // Returns a scene based on its name
@@ -4816,7 +4818,7 @@ class SparkLine {
   }
 }
 
-// Intersection
+// Intersection Scene
 class IntersectionScene extends LobbyScene {
   constructor() {
     super('Intersection', new SceneOptions(false, [], 0));
@@ -5365,7 +5367,8 @@ class Road {
   }
 }
 
-// Vase
+// Vase Scene
+// TODO: BROKEN
 class VaseScene extends LobbyScene {
   constructor() {
     super('Vase', new SceneOptions(false, [], 0));
@@ -5427,5 +5430,312 @@ class Vase {
 
       ellipse(this.x, i * width/(this.count-1), sampleA + sampleB, width/(this.count-1)*4);
     }
+  }
+}
+
+// Constellations Scene
+class ConstellationsScene extends LobbyScene {
+  constructor() {
+    super('Constellations', new SceneOptions(false, [], 0));
+    this.constellations = new IntersectingCircles();
+  }
+
+  setup() {
+    this.constellations = new IntersectingCircles();
+    background(255);
+    super.setup();
+  }
+
+  draw() {
+    background(220);
+    this.constellations.draw();
+  }
+}
+
+class IntersectingCircles {
+  constructor() {
+    this.count = 32;
+    this.circles = [];
+    this.hueRange = 80;
+    this.hues = this.getHues();
+    colorMode(HSB);
+    this.background = color((this.sampleHue()+this.hueRange/2)%360, 50, round(random(5,25)));
+    this.invert = random(0,1) > 0.5;
+
+    this.generateCircles();
+  }
+
+  generateCircles() {
+    for(let i=0; i < this.count; i++) {
+      let radius = round(random(10,75));
+      let position = createVector(floor(random(radius, width-radius)), floor(random(radius, height-radius)));
+      let velocity = createVector(random(-1,1), random(-1,1)).mult(1);
+      colorMode(HSB);
+      let c = color(this.sampleHue(), 80, round(random(80,100)));
+      if(this.invert) {
+        colorMode(RGB);
+        c = color(255-red(c), 255-green(c), 255-blue(c));
+      }
+      this.circles.push(new IntersectingCircle(this, position, velocity, radius, c));
+    }
+
+    // Background inversion
+    if(this.invert) {
+      colorMode(RGB);
+      this.background = color(255-red(this.background), 255-green(this.background), 255-blue(this.background));
+    }
+  }
+
+  draw() {
+    colorMode(HSB);
+    background(this.background);
+
+    this.circles.forEach(c => {
+      c.update();
+      c.draw();
+    })
+  }
+
+  getHues() {
+    let startHue = round(random(0,360));
+    let endHue = (startHue + this.hueRange)%360;
+
+    return createVector(startHue, endHue);
+  }
+
+  sampleHue() {
+    if(this.hues.y < this.hues.x) {
+      // Wrapping
+      let rangeSelector = round(random(0,1));
+
+      if(rangeSelector === 0) {
+        return round(random(0, this.hues.x));
+      } else {
+        return round(random(this.hues.y, 360));
+      }
+    } else {
+      return round(random(this.hues.x, this.hues.y));
+    }
+  }
+}
+
+class IntersectingCircle {
+  constructor(handler, position, velocity, radius, c) {
+    this.handler = handler;
+    this.position = position;
+    this.velocity = velocity;
+    this.radius = radius;
+    this.color = c;
+    this.intersections = [];
+    this.nearby = [];
+  }
+
+  update() {
+    // Bounce around
+    this.position.add(this.velocity);
+
+    if(this.position.x - this.radius <= 0 || this.position.x + this.radius >= width) {
+      this.velocity.x *= -1;
+    }
+
+    if(this.position.y - this.radius <= 0 || this.position.y + this.radius >= height) {
+      this.velocity.y *= -1;
+    }
+
+    // Iterate over all other circles in the handler and determine any intersections
+    this.intersections = [];
+    this.nearby = [];
+    this.handler.circles.forEach(c => {
+      if(c != this) {
+        let intersection = c.getIntersections(this);
+        if(intersection !== false && intersection !== null) {
+          this.intersections.push([c, intersection]);
+        }
+        if(!intersection) {
+          this.nearby.push(c);
+        }
+      }
+    })
+  }
+
+  draw() {
+    // Draw Circle
+    noFill();
+    stroke(this.color);
+    strokeWeight(1);
+    drawingContext.setLineDash([0,0]);
+
+    // circle(this.position.x, this.position.y, this.radius*2);
+
+    // Draw Center
+    let centerSize = 8;
+    circle(this.position.x, this.position.y, centerSize/2);
+
+    let extenstionLength = 2;
+    for(let i=0; i < 4; i++) {
+      let start = createVector(cos(i*HALF_PI)*(centerSize/2), sin(i*HALF_PI)*(centerSize/2)).add(this.position);
+      let end = createVector(cos(i*HALF_PI)*((centerSize/2)+extenstionLength), sin(i*HALF_PI)*((centerSize/2)+extenstionLength)).add(this.position);
+
+      line(start.x, start.y, end.x, end.y);
+    }
+
+    // Draw Intersections
+    let lineGap = 8;
+    let gapSize = 3; // For Points
+    let pointSize = 6;
+    let pointHole = pointSize*0.75;
+
+    // Draw Nearby
+    let nearbySpacing = this.radius * 0.3;
+    this.nearby.forEach(n => {
+      let minDistance = this.radius + n.radius;
+      let maxDistance = minDistance*2;
+      let positionLerp = (mathUtil.clamp(p5.Vector.dist(n.position, this.position), minDistance, maxDistance)-minDistance)/(maxDistance-minDistance);
+
+      let placementVector = p5.Vector.sub(n.position, this.position).setMag(this.radius-(positionLerp*nearbySpacing)).add(this.position);
+      let minSize = pointSize;
+      let maxSize = 2;
+      let nearbySize = (positionLerp * (maxSize-minSize))+minSize;
+
+      let minHole = pointHole;
+      let maxHole = 0;
+      let nearbyHole = (positionLerp * (maxHole-minHole))+minHole;
+
+      colorMode(HSB);
+      let nearbyColor = lerpColor(n.color, this.color, mathUtil.clamp((((mathUtil.clamp(p5.Vector.dist(n.position, this.position), minDistance, maxDistance)-minDistance)/(maxDistance-minDistance))*4)-1, 0, 1));
+
+      // Outer Gap
+      stroke(color(this.handler.background));
+      strokeWeight(nearbySize+(gapSize*2));
+
+      point(placementVector.x, placementVector.y);
+
+      // Point
+      stroke(nearbyColor);
+      strokeWeight(nearbySize);
+
+      point(placementVector.x, placementVector.y);
+
+      // Inner Hole
+      stroke(color(this.handler.background));
+      strokeWeight(nearbyHole);
+
+      point(placementVector.x, placementVector.y);
+    });
+
+    this.intersections.forEach(i => {
+      colorMode(HSB);
+      let mixColor = lerpColor(i[0].color, this.color, 0.5);
+
+      noFill();
+      stroke(this.color);
+      strokeWeight(5);
+
+      let dashCount = 3;
+      i[1].forEach(p => {
+        // Outer Gap
+        stroke(color(this.handler.background));
+        strokeWeight(pointSize+(gapSize*2));
+
+        point(p.x, p.y);
+
+        // Point
+        stroke(this.color);
+        strokeWeight(pointSize);
+
+        point(p.x, p.y);
+
+        // Inner Hole
+        stroke(color(this.handler.background));
+        strokeWeight(pointHole);
+
+        point(p.x, p.y);
+
+        stroke(this.color);
+        strokeWeight(1);
+
+        let start = createVector(p.x, p.y).add(p5.Vector.sub(this.position, p).setMag(lineGap));
+        let end = createVector(this.position.x, this.position.y).add(p5.Vector.sub(p, this.position).setMag(lineGap+centerSize+extenstionLength));
+
+        let lineLength = p5.Vector.dist(start, end);
+        let dashLength = lineLength/((dashCount*2)-1);
+
+        drawingContext.setLineDash([dashLength,dashLength]);
+
+        let strokeGradient = drawingContext.createLinearGradient(start.x, start.y, end.x, end.y);
+        strokeGradient.addColorStop(0, mixColor);
+        strokeGradient.addColorStop(1, this.color);
+
+        drawingContext.strokeStyle = strokeGradient;
+
+        line(start.x, start.y, end.x, end.y);
+      });
+
+      // Cross Line
+      // Gap
+      stroke(color(this.handler.background));
+      strokeWeight(3);
+      drawingContext.setLineDash([0,0]);
+
+      let start = createVector(i[1][0].x, i[1][0].y).add(p5.Vector.sub(createVector(i[1][1].x, i[1][1].y), createVector(i[1][0].x, i[1][0].y)).setMag(lineGap));
+      let end = createVector(i[1][1].x, i[1][1].y).add(p5.Vector.sub(createVector(i[1][0].x, i[1][0].y), createVector(i[1][1].x, i[1][1].y)).setMag(lineGap));
+
+      line(start.x, start.y, end.x, end.y);
+
+      stroke(mixColor);
+      strokeWeight(1);
+
+      let lineLength = p5.Vector.dist(start, end);
+      let dashLength = lineLength/((dashCount*2)-1);
+
+      drawingContext.setLineDash([dashLength,dashLength]);
+
+      line(start.x, start.y, end.x, end.y);
+    })
+  }
+
+  getIntersections(c) {
+    let a, dx, dy, d, h, rx, ry;
+    let x2, y2;
+
+    // dx and dy are the vertical and horizontal distances between the circle centers
+    dx = c.position.x - this.position.x;
+    dy = c.position.y - this.position.y;
+
+    // Determine the straight-line distance between the centers
+    d = sqrt((dy*dy) + (dx*dx));
+
+    // Check for solvability
+    if (d > (this.radius + c.radius)) {
+      // no solution. circles do not intersect
+      return false;
+    }
+    if (d < abs(this.radius - c.radius)) {
+      // no solution. one circle is contained in the other
+      return null;
+    }
+
+    // 'point 2' is the point where the line through the circle intersection points crosses the line between the circle centers
+    // Determine the distance from point 0 to point 2
+    a = ((this.radius*this.radius) - (c.radius*c.radius) + (d*d)) / (2.0 * d) ;
+
+    // Determine the coordinates of point 2
+    x2 = this.position.x + (dx * a/d);
+    y2 = this.position.y + (dy * a/d);
+
+    // Determine the distance from point 2 to either of the intersection points
+    h = sqrt((this.radius*this.radius) - (a*a));
+
+    // Now determine the offsets of the intersection points from point 2
+    rx = -dy * (h/d);
+    ry = dx * (h/d);
+
+    // Determine the absolute intersection points
+    let xi = x2 + rx;
+    let xi_prime = x2 - rx;
+    let yi = y2 + ry;
+    let yi_prime = y2 - ry;
+
+    return [createVector(xi,yi), createVector(xi_prime,yi_prime)];
   }
 }
